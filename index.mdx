@@ -1,97 +1,93 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: Introduction
+description: Git worktree manager for parallel development with multiple AI coding agents
 ---
 
-## Setting up
+<img src="/image.png" alt="GWTree" />
 
-Get your documentation site up and running in minutes.
+## What is GWTree?
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+GWTree is a git worktree manager built for the AI-assisted development era. Create and manage git worktrees effortlessly, enabling you to **run multiple AI agents in parallel** — Claude Code, Command Code, Cursor on separate branches simultaneously.
 
-## Make it yours
+## Why GWTree?
 
-Design a docs site that looks great and empowers your users.
+Modern development with AI coding agents requires working on multiple features simultaneously. GWTree eliminates the friction of branch switching, stashing, and context loss by giving each agent its own isolated worktree.
 
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+**Key benefits:**
+
+- **Multi-agent parallelism** — Run Claude Code, Command Code, Cursor on separate features simultaneously
+- **Instant worktree creation** — `gwt a b c -x` creates 3 isolated environments in seconds
+- **Clean merges** — Each agent works on its own branch, merge when ready
+- **Zero conflicts** — No stashing, no branch switching, no context loss
+
+## Quick example
+
+```bash
+# Create 3 worktrees instantly for parallel AI agent development
+gwt auth api dashboard -x
+```
+
+This creates three isolated worktrees:
+- **Claude Code** → `repo-auth/` fixing authentication
+- **Command Code** → `repo-api/` building API endpoints  
+- **Cursor** → `repo-dashboard/` creating UI components
+
+Each agent works on its own branch without conflicts. Merge when ready with `gwt merge`.
+
+## Core features
+
+<CardGroup cols={2}>
+  <Card title="Batch creation" icon="layer-group">
+    Create multiple worktrees at once: `gwt dashboard api auth`
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Status dashboard" icon="chart-line">
+    See changes, commits ahead/behind, merge status for all worktrees
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Smart cleanup" icon="broom">
+    Auto-remove merged worktrees, or clean all with `--all`
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="Merge helper" icon="code-merge">
+    One command to merge, remove worktree, and delete branch
   </Card>
-</Columns>
+  <Card title="Quick creation" icon="bolt">
+    Minimal prompts, smart defaults, transparent command output
+  </Card>
+  <Card title="Interactive management" icon="list">
+    List, search, and delete worktrees with fuzzy search
+  </Card>
+</CardGroup>
 
-## Create beautiful pages
+## Get started
 
-Everything you need to create world-class documentation.
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Install GWTree globally with your favorite package manager
+  </Card>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Get your first worktree running in minutes
+  </Card>
+</CardGroup>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+## Smart naming pattern
 
-## Need inspiration?
+GWTree follows a consistent naming pattern: `{repo}-{name}` for worktrees with matching branch names.
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+```bash
+gwt feature-login
+# Creates: repo-feature-login/ with branch feature-login
+```
+
+## Interactive UX
+
+Clean, compact output with visual indicators:
+
+```bash
+│
+│  ◆  Create  git worktree add -b "feature-login" .../repo-feature-login "main"
+│  └  /path/to/repo-feature-login
+│
+│  ◆  Install  pnpm install
+│  └  installs dependencies
+│
+└  Done  cd ../repo-feature-login
+```

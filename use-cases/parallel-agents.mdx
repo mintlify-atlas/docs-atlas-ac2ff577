@@ -1,0 +1,214 @@
+---
+title: "Running Parallel AI Agents"
+description: "Run Claude Code, Command Code, and Cursor simultaneously on different branches"
+icon: "split"
+---
+
+GWTree enables you to run multiple AI coding agents in parallel, each working on separate branches in isolated worktrees. This means zero conflicts, no context switching, and faster feature delivery.
+
+## Why Parallel Agents?
+
+In the AI-assisted development era, you can leverage multiple coding agents simultaneously:
+
+- **Claude Code** fixing authentication bugs
+- **Command Code** building API endpoints  
+- **Cursor** creating UI components
+
+Each agent works in its own isolated environment without stepping on each other's toes.
+
+## Quick Start
+
+<Steps>
+<Step title="Create multiple worktrees instantly">
+  Create three worktrees for different features in one command:
+
+  ```bash
+  gwt auth api dashboard -x
+  ```
+
+  This creates:
+  - `repo-auth/` with `auth` branch
+  - `repo-api/` with `api` branch
+  - `repo-dashboard/` with `dashboard` branch
+
+  The `-x` flag skips opening editors automatically.
+</Step>
+
+<Step title="Launch agents in each worktree">
+  Open each worktree with its dedicated agent:
+
+  ```bash
+  # Terminal 1: Claude Code on auth
+  cd repo-auth
+  claude
+  ```
+
+  ```bash
+  # Terminal 2: Command Code on API
+  cd repo-api
+  commandcode
+  ```
+
+  ```bash
+  # Terminal 3: Cursor on dashboard
+  cd repo-dashboard
+  cursor .
+  ```
+</Step>
+
+<Step title="Work in parallel">
+  Each agent now operates independently:
+  - No branch switching conflicts
+  - No stash/unstash cycles
+  - No context loss between tasks
+  - Each agent maintains its own state
+</Step>
+
+<Step title="Monitor progress">
+  Check status across all worktrees:
+
+  ```bash
+  gwt status
+  ```
+
+  This shows changes, commits ahead/behind, and merge status for each worktree.
+</Step>
+</Steps>
+
+## Real-World Workflow
+
+<CardGroup cols={2}>
+<Card title="Bug Fixes" icon="bug">
+  Assign critical bugs to different agents:
+  
+  ```bash
+  gwt bug-auth bug-payment bug-email -x
+  ```
+  
+  Each agent can investigate and fix independently.
+</Card>
+
+<Card title="Feature Development" icon="code-branch">
+  Split a large feature across multiple agents:
+  
+  ```bash
+  gwt backend-api frontend-ui database-migration -x
+  ```
+  
+  Coordinate full-stack development in parallel.
+</Card>
+
+<Card title="Testing Approaches" icon="flask">
+  Try different implementations simultaneously:
+  
+  ```bash
+  gwt approach-a approach-b approach-c -x
+  ```
+  
+  Compare solutions before committing.
+</Card>
+
+<Card title="Refactoring Tasks" icon="arrows-rotate">
+  Tackle refactoring modules in parallel:
+  
+  ```bash
+  gwt refactor-auth refactor-api refactor-ui -x
+  ```
+  
+  Keep refactoring isolated from new features.
+</Card>
+</CardGroup>
+
+## Merging Work
+
+Once an agent completes its work:
+
+```bash
+# Review the changes
+cd repo-auth
+git diff main
+
+# Merge and cleanup in one command
+gwt merge auth
+```
+
+This automatically:
+1. Checks out main
+2. Merges the `auth` branch
+3. Removes the `repo-auth/` worktree
+4. Deletes the `auth` branch
+
+## Best Practices
+
+<AccordionGroup>
+<Accordion title="Keep tasks independent">
+  Assign tasks to agents that don't overlap in the same files. This prevents merge conflicts and allows true parallel work.
+</Accordion>
+
+<Accordion title="Use descriptive names">
+  Name worktrees clearly to track which agent is working on what:
+  
+  ```bash
+  gwt claude-auth cursor-dashboard commandcode-api -x
+  ```
+</Accordion>
+
+<Accordion title="Monitor regularly">
+  Use `gwt status` frequently to track progress across all agents:
+  
+  ```bash
+  gwt st  # Quick status check
+  ```
+</Accordion>
+
+<Accordion title="Clean up completed work">
+  Remove merged worktrees regularly:
+  
+  ```bash
+  gwt clean  # Remove merged worktrees only
+  gwt clean --all  # Remove all worktrees
+  ```
+</Accordion>
+</AccordionGroup>
+
+## Advanced: Fast Mode
+
+For even faster setup, use `-y` to skip all prompts:
+
+```bash
+GWT_EDITOR=none gwt auth api dashboard -y
+```
+
+This uses saved defaults and creates all worktrees instantly.
+
+## Troubleshooting
+
+<AccordionGroup>
+<Accordion title="Agent conflicts on same files">
+  If two agents need to work on overlapping code:
+  1. Let one agent complete and merge first
+  2. Update main: `cd repo && git pull`
+  3. Rebase the other agent's work: `cd repo-feature && git rebase main`
+</Accordion>
+
+<Accordion title="Worktree creation fails">
+  Ensure you're in a git repository and have a clean working directory:
+  
+  ```bash
+  git status  # Check for uncommitted changes
+  git stash   # Stash changes if needed
+  ```
+</Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+<Card title="Feature Development" icon="code" href="/use-cases/feature-development">
+  Learn the complete feature development workflow with worktrees.
+</Card>
+
+<Card title="Code Review" icon="magnifying-glass" href="/use-cases/code-review">
+  Review PRs without disrupting your current work.
+</Card>
+</CardGroup>

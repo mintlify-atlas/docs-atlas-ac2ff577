@@ -1,0 +1,229 @@
+---
+title: Creating Worktrees
+description: Learn how to create single git worktrees with interactive prompts
+---
+
+GWTree makes it easy to create new git worktrees with an interactive guided workflow. This guide covers creating a single worktree at a time.
+
+## Quick Start
+
+Create a worktree with default settings:
+
+```bash
+gwt feature-name
+```
+
+Or run interactively to enter the name:
+
+```bash
+gwt
+```
+
+## Interactive Workflow
+
+When you run `gwt` without arguments, you'll be guided through an interactive workflow:
+
+<Steps>
+
+### Step 1: Handle Uncommitted Changes
+
+If you have uncommitted changes, GWTree will prompt you:
+
+```
+◆  Uncommitted changes detected:
+│  ○ Stash changes
+│  ○ Ignore and continue
+│  ○ Cancel
+```
+
+- **Stash changes**: Runs `git stash` to save your changes
+- **Ignore and continue**: Proceeds without stashing
+- **Cancel**: Exits the workflow
+
+### Step 2: Switch to Base Branch
+
+If you're not on the main branch (main/master), you'll be prompted:
+
+```
+◆  Not on main (currently on feature-branch):
+│  ○ Switch to main
+│  ○ Ignore and continue
+│  ○ Cancel
+```
+
+Selecting "Switch to main" runs `git checkout main`.
+
+### Step 3: Pull Latest Changes
+
+If a remote is configured, you'll be asked to pull:
+
+```
+◆  Pull latest from origin/main?
+│  ○ Yes, git pull --rebase
+│  ○ Skip
+```
+
+Selecting "Yes" runs `git pull --rebase origin main` to sync with remote.
+
+### Step 4: Enter Worktree Name
+
+You'll see a preview of the directory structure:
+
+```
+/path/to/parent/myrepo-<name>
+
+Press ESC to set worktree and branch names separately
+
+◆  Worktree & branch name:
+│  feature-name
+```
+
+By default, the name you enter will be used for both the worktree directory and git branch.
+
+**Directory naming pattern**: `{repo}-{name}`
+
+For example, if your repo is `myrepo` and you enter `feature-auth`, the worktree will be created at:
+```
+../myrepo-feature-auth
+```
+
+#### Separate Worktree and Branch Names
+
+Press **ESC** at the name prompt to enter worktree and branch names separately:
+
+```
+◆  Worktree name:
+│  feature-auth
+
+◆  Branch name:
+│  user/john/auth-feature
+```
+
+This is useful when you want different naming conventions for directories vs. branches.
+
+### Step 5: Automatic Setup
+
+GWTree automatically performs these operations:
+
+```
+│
+│  ◆  Prune  git worktree prune
+│  └  removes stale refs
+│
+│  ◆  Create  git worktree add -b "feature-name" .../myrepo-feature-name "main"
+│  └  /path/to/parent/myrepo-feature-name
+│
+│  ◆  Install  pnpm install
+│  └  installs dependencies
+│
+│  ◆  Open  code .../myrepo-feature-name
+│  └  opens in editor
+│
+└  Done  cd ../myrepo-feature-name
+```
+
+The workflow:
+1. **Prunes** stale worktree references
+2. **Creates** the worktree with a new branch from main
+3. **Installs** dependencies (if configured)
+4. **Opens** in your editor (if configured)
+5. Shows the **cd command** to navigate to the new worktree
+
+</Steps>
+
+## Branch Name Conflicts
+
+If a branch with your chosen name already exists, GWTree automatically appends a counter:
+
+```
+feature-name    # Already exists
+feature-name-1  # Created instead
+```
+
+## Skip Prompts Mode
+
+Use the `-y` or `--yes` flag to skip all interactive prompts and use defaults:
+
+```bash
+gwt feature-name -y
+```
+
+With `-y` flag:
+- Uncommitted changes are automatically stashed
+- Automatically switches to main branch
+- Automatically pulls from remote
+- No editor/dependency prompts (uses saved config)
+
+## Skip Editor
+
+Prevent opening the editor after creation:
+
+```bash
+gwt feature-name -x
+# or
+gwt feature-name --no-editor
+```
+
+## Examples
+
+### Create with Interactive Prompts
+
+```bash
+gwt
+# Enter name when prompted
+```
+
+### Create with Name Argument
+
+```bash
+gwt bug-fix
+# Creates: ../myrepo-bug-fix
+# Branch: bug-fix
+```
+
+### Quick Creation (Skip All Prompts)
+
+```bash
+gwt feature/new-api -y
+# Creates worktree immediately with defaults
+```
+
+### Create Without Opening Editor
+
+```bash
+gwt refactor -x
+# Creates but doesn't open in editor
+```
+
+## Valid Names
+
+Worktree and branch names must match the pattern: `[a-zA-Z0-9._/-]+`
+
+Valid examples:
+- `feature-name`
+- `user/john/feature`
+- `feat.new-api`
+- `123-bug-fix`
+
+Invalid examples:
+- `feature name` (spaces not allowed)
+- `feature@name` (@ not allowed)
+
+## What Happens Under the Hood
+
+When you create a worktree, GWTree:
+
+1. Detects your git repository root
+2. Identifies the main branch (main or master)
+3. Creates the worktree directory at the same level as your repo
+4. Creates a new branch from main
+5. Records the worktree in `~/.gwtree/worktrees.json`
+6. Detects package manager from lockfiles (pnpm-lock.yaml, package-lock.json, etc.)
+7. Installs dependencies if configured
+8. Opens in your configured editor
+
+## Next Steps
+
+- Learn about [batch creation](/guides/batch-creation) to create multiple worktrees at once
+- Configure [automatic behaviors](/guides/configuration) like editor and dependency installation
+- Explore [managing worktrees](/guides/managing-worktrees) with list, status, and remove commands

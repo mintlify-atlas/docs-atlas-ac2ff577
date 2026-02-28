@@ -1,0 +1,319 @@
+---
+title: gwt merge
+description: Merge worktree branch to main and clean up
+---
+
+## Syntax
+
+```bash
+gwt merge <name>
+gwt m <name>
+```
+
+## Description
+
+Merges a worktree's branch into main and removes both the worktree and the branch. This is a complete cleanup operation for finished work.
+
+The command performs all steps needed to complete a feature:
+1. Switches to main branch
+2. Merges the worktree branch
+3. Removes the worktree
+4. Deletes the branch
+
+## Arguments
+
+<ParamField path="name" type="string" required>
+  Name of the worktree to merge. Can be:
+  - Branch name (e.g., `feature-auth`)
+  - Worktree directory name (e.g., `myapp-feature-auth`)
+  - Worktree suffix (e.g., `feature-auth` for `myapp-feature-auth`)
+</ParamField>
+
+## Aliases
+
+- `m` - Short alias for merge
+
+## Workflow
+
+```
+┌  Merge feature-auth to main
+│
+│  ◆  Switch  git checkout main
+│  └  switched to main
+│
+│  ◆  Merge  git merge feature-auth
+│  └  merged to main
+│
+│  ◆  Remove  git worktree remove .../myapp-feature-auth
+│  └  worktree removed
+│
+│  ◆  Branch  git branch -d feature-auth
+│  └  branch deleted
+│
+└  Done  Merged and cleaned up feature-auth
+```
+
+## Examples
+
+### Merge by branch name
+
+```bash
+gwt merge feature-auth
+```
+
+### Merge by worktree name
+
+```bash
+gwt merge myapp-feature-auth
+```
+
+### Merge by suffix
+
+```bash
+# For worktree: myapp-feature-auth
+gwt merge feature-auth
+```
+
+### Using short alias
+
+```bash
+gwt m feature-payment
+```
+
+## Prerequisites
+
+The worktree must have:
+
+✅ **No uncommitted changes** - All changes must be committed
+
+```bash
+# Check status first
+gwt status
+
+# If there are changes, commit them
+cd ../myapp-feature-auth
+git add .
+git commit -m "Complete feature"
+
+# Then merge
+gwt merge feature-auth
+```
+
+## Error Handling
+
+### Uncommitted Changes
+
+If the worktree has uncommitted changes:
+
+```
+┌  Merge feature-auth to main
+│
+✖  Worktree has uncommitted changes. Commit or stash them first.
+```
+
+**Solution:**
+```bash
+cd ../myapp-feature-auth
+git add .
+git commit -m "Final changes"
+gwt merge feature-auth
+```
+
+### Merge Conflicts
+
+If the merge has conflicts:
+
+```
+│  ◆  Switch  git checkout main
+│  └  switched to main
+│
+│  ◆  Merge  git merge feature-auth
+│  └  CONFLICT (content): Merge conflict in src/app.ts
+│
+✖  Merge failed. Resolve conflicts manually.
+```
+
+**Solution:**
+```bash
+# You're now on main with conflicts
+git status
+
+# Resolve conflicts in your editor
+# Then:
+git add .
+git commit
+
+# Manually remove the worktree
+gwt remove
+```
+
+### Worktree Not Found
+
+```
+✖  Worktree not found: feature-xyz
+```
+
+Check available worktrees:
+```bash
+gwt list
+```
+
+## Merge Process Details
+
+### Step 1: Switch to Main
+
+Switches the main repository to the main branch:
+
+```bash
+git checkout main
+```
+
+### Step 2: Merge Branch
+
+Merges the worktree's branch into main:
+
+```bash
+git merge feature-auth
+```
+
+This performs a standard git merge. If fast-forward is possible, it does a fast-forward merge. Otherwise, it creates a merge commit.
+
+### Step 3: Remove Worktree
+
+Removes the worktree directory:
+
+```bash
+git worktree remove "<path>" --force
+```
+
+Also removes the entry from GWTree's registry.
+
+### Step 4: Delete Branch
+
+Deletes the feature branch:
+
+```bash
+git branch -d feature-auth
+```
+
+Uses `-d` (safe delete) which prevents deletion if branch isn't fully merged.
+
+## Name Resolution
+
+The `<name>` argument is flexible and matches:
+
+```bash
+# All these work for worktree "myapp-feature-auth" with branch "feature-auth":
+gwt merge feature-auth
+gwt merge myapp-feature-auth
+```
+
+For worktree `myapp-feat` with branch `feature/auth-impl`:
+
+```bash
+gwt merge feature/auth-impl    # Branch name
+gwt merge myapp-feat           # Worktree directory name
+gwt merge feat                 # Suffix
+```
+
+## When to Use
+
+### Local Development
+
+Merge completed features directly:
+
+```bash
+# Feature complete
+gwt merge feature-auth
+
+# Continue with next feature
+gwt feature-payment
+```
+
+### After PR Merge
+
+<Warning>
+If your feature was merged via GitHub PR, you should:
+1. Pull the merged changes: `git pull`
+2. Just remove the worktree: `gwt clean` or `gwt remove`
+
+Do NOT use `gwt merge` as the branch is already merged.
+</Warning>
+
+### Hotfixes
+
+Quickly merge urgent fixes:
+
+```bash
+# Create fix
+gwt hotfix-123
+cd ../myapp-hotfix-123
+# ... make changes ...
+git commit -am "Fix critical bug"
+
+# Merge immediately
+gwt merge hotfix-123
+```
+
+## Comparison with Manual Process
+
+### Using gwt merge
+
+```bash
+gwt merge feature-auth
+```
+
+### Manual equivalent
+
+```bash
+cd main-repo
+git checkout main
+git merge feature-auth
+git worktree remove ../myapp-feature-auth --force
+git branch -d feature-auth
+rm -rf ../myapp-feature-auth
+# Edit ~/.gwtree/worktrees.json manually
+```
+
+## Integration with PR Workflow
+
+### GitHub/GitLab Merge
+
+```bash
+# 1. Push branch
+cd ../myapp-feature-auth
+git push origin feature-auth
+
+# 2. Create and merge PR on GitHub
+
+# 3. Pull merged changes
+cd main-repo
+git pull
+
+# 4. Clean up worktree (don't merge again!)
+gwt clean
+```
+
+### Local Merge
+
+```bash
+# 1. Ensure feature is complete
+gwt status
+
+# 2. Merge locally
+gwt merge feature-auth
+
+# 3. Push to remote
+git push origin main
+```
+
+## Exit Codes
+
+- `0` - Success (branch merged, worktree removed, branch deleted)
+- `1` - Error (worktree not found, uncommitted changes, merge conflict, not in git repository)
+
+## Related Commands
+
+- [gwt status](/commands/status) - Check if worktree is ready to merge
+- [gwt clean](/commands/clean) - Remove multiple merged worktrees
+- [gwt remove](/commands/remove) - Remove without merging

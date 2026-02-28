@@ -1,0 +1,261 @@
+---
+title: gwt clean
+description: Remove merged worktrees in batch
+---
+
+## Syntax
+
+```bash
+gwt clean [options]
+gwt c [options]
+```
+
+## Description
+
+Removes worktrees whose branches have been merged to main. By default, only removes merged worktrees. With the `-a` flag, removes all worktrees.
+
+This command is useful for cleaning up completed work after branches have been merged.
+
+## Aliases
+
+- `c` - Short alias for clean
+
+## Options
+
+<ParamField path="-a, --all" type="flag">
+  Remove all worktrees, not just merged ones. Use with caution as this removes worktrees with uncommitted changes.
+</ParamField>
+
+## Behavior
+
+### Default Mode (Merged Only)
+
+1. **Scan** - Finds all worktrees for current repo
+2. **Filter** - Identifies worktrees with branches merged to main
+3. **Preview** - Shows list of worktrees to be removed
+4. **Confirm** - Asks for confirmation before removal
+5. **Remove** - Removes each worktree and updates registry
+
+### All Mode (`-a` flag)
+
+1. **Scan** - Finds all worktrees for current repo
+2. **Preview** - Shows all worktrees to be removed
+3. **Confirm** - Asks for confirmation
+4. **Remove** - Removes all worktrees
+
+## Interactive Flow
+
+### Clean Merged Worktrees
+
+```
+┌  Clean Merged Worktrees
+│
+│  Will remove:
+│  •  feature-auth myapp-feature-auth
+│  •  bugfix-404 myapp-bugfix-404
+│
+◇  Remove 2 worktrees?
+│  Yes
+│
+│  ◆  Removed myapp-feature-auth
+│  └  /Users/john/projects/myapp-feature-auth
+│
+│  ◆  Removed myapp-bugfix-404
+│  └  /Users/john/projects/myapp-bugfix-404
+│
+└  Done  Removed 2 worktrees
+```
+
+### Clean All Worktrees
+
+```bash
+gwt clean -a
+```
+
+```
+┌  Clean All Worktrees
+│
+│  Will remove:
+│  •  feature-auth myapp-feature-auth
+│  •  feature-payment myapp-payment
+│  •  bugfix-404 myapp-bugfix-404
+│
+◇  Remove 3 worktrees?
+│  Yes
+│
+└  Done  Removed 3 worktrees
+```
+
+## Examples
+
+### Clean merged worktrees
+
+```bash
+gwt clean
+```
+
+### Clean all worktrees
+
+```bash
+gwt clean --all
+```
+
+### Using short flags
+
+```bash
+gwt c -a
+```
+
+### Check before cleaning
+
+```bash
+# See what's merged
+gwt status
+
+# Clean merged worktrees
+gwt clean
+```
+
+## Merge Detection
+
+A worktree is considered "merged" when:
+
+```bash
+git branch --merged main
+```
+
+Shows the worktree's branch in the output.
+
+This means:
+- All commits from the branch are in main
+- The branch can be safely deleted
+- The worktree is no longer needed
+
+## When No Worktrees to Clean
+
+```bash
+gwt clean
+```
+
+**Output:**
+```
+│
+└  No worktrees to clean
+```
+
+This happens when:
+- No worktrees exist
+- No worktrees have been merged (in default mode)
+
+## Cancellation
+
+You can cancel the operation at the confirmation prompt:
+
+```
+◇  Remove 2 worktrees?
+│  No
+│
+└  Cancelled
+```
+
+No worktrees are removed if you:
+- Select "No"
+- Press ESC
+- Press Ctrl+C
+
+## Force Removal
+
+The clean command uses force removal (`--force` flag with git) to handle:
+
+- Uncommitted changes (when using `-a`)
+- Untracked files
+- Modified worktrees
+
+## Branch Handling
+
+The `clean` command only removes worktree directories. Git branches remain in the repository.
+
+To also delete branches:
+
+```bash
+# Clean merged worktrees
+gwt clean
+
+# Delete merged branches
+git branch --merged main | grep -v "^\\*" | xargs git branch -d
+```
+
+Or use [`gwt merge`](/commands/merge) which removes both.
+
+## Safety Warnings
+
+### Using `--all` Flag
+
+<Warning>
+The `-a, --all` flag removes ALL worktrees, including those with:
+- Uncommitted changes
+- Unmerged commits
+- Active development
+
+Use `gwt status` first to review what will be lost.
+</Warning>
+
+### No Confirmation per Worktree
+
+Unlike [`gwt remove`](/commands/remove), the clean command asks for confirmation only once at the beginning. All selected worktrees are removed in batch.
+
+## Typical Workflow
+
+### After Merging PRs
+
+```bash
+# Pull merged changes
+cd main-repo
+git pull
+
+# Check what's merged
+gwt status
+
+# Clean merged worktrees
+gwt clean
+```
+
+### Weekly Cleanup
+
+```bash
+# See all worktree status
+gwt status
+
+# Remove merged ones
+gwt clean
+
+# Optionally remove specific unmerged ones
+gwt remove
+```
+
+### Fresh Start
+
+```bash
+# Remove everything and start fresh
+gwt clean --all
+```
+
+## Comparison with Other Commands
+
+| Command | Selection | Confirmation | Branches |
+|---------|-----------|--------------|----------|
+| `gwt clean` | Merged only | Once | Keeps |
+| `gwt clean -a` | All | Once | Keeps |
+| `gwt remove` | Interactive | Per worktree | Keeps |
+| `gwt merge` | Single | Per operation | Deletes |
+
+## Exit Codes
+
+- `0` - Success (worktrees cleaned or operation cancelled)
+- `1` - Error (not in a git repository)
+
+## Related Commands
+
+- [gwt status](/commands/status) - Check merge status before cleaning
+- [gwt remove](/commands/remove) - Remove worktrees interactively
+- [gwt merge](/commands/merge) - Merge and remove a single worktree

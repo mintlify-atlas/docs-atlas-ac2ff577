@@ -1,0 +1,97 @@
+---
+title: Commands Overview
+description: Complete reference of all GWTree CLI commands
+---
+
+GWTree provides a comprehensive set of commands for managing git worktrees. All commands can be invoked using the `gwt` binary.
+
+## Quick Reference
+
+<CardGroup cols={2}>
+  <Card title="Create" icon="plus" href="/commands/create">
+    Create new git worktree(s)
+  </Card>
+  <Card title="List" icon="list" href="/commands/list">
+    List all worktrees for current repo
+  </Card>
+  <Card title="Remove" icon="trash" href="/commands/remove">
+    Remove worktrees interactively
+  </Card>
+  <Card title="Status" icon="chart-simple" href="/commands/status">
+    Show status of all worktrees
+  </Card>
+  <Card title="Clean" icon="broom" href="/commands/clean">
+    Remove merged worktrees
+  </Card>
+  <Card title="Merge" icon="code-merge" href="/commands/merge">
+    Merge worktree branch to main
+  </Card>
+  <Card title="Config" icon="gear" href="/commands/config">
+    Manage configuration
+  </Card>
+  <Card title="Flags" icon="flag" href="/commands/flags">
+    Global flags and options
+  </Card>
+</CardGroup>
+
+## Command List
+
+### Core Commands
+
+| Command | Aliases | Description |
+|---------|---------|-------------|
+| `gwt [names...]` | - | Create new git worktree(s) |
+| `gwt list` | `ls` | List worktrees for current repo |
+| `gwt remove` | `rm` | Remove worktrees interactively |
+| `gwt status` | `st` | Show status of all worktrees (changes, commits ahead/behind) |
+| `gwt clean` | `c` | Remove worktrees that have been merged to main |
+| `gwt merge <name>` | `m` | Merge worktree branch to main and remove worktree |
+| `gwt config [action]` | - | Open config file or reset defaults |
+
+### Utility Commands
+
+| Command | Description |
+|---------|-------------|
+| `gwt version` | Show version number |
+| `gwt help` | Show help information |
+| `gwt -v, --version` | Output the version number |
+| `gwt -h, --help` | Display help for command |
+
+## Global Flags
+
+These flags work with the default `gwt` command (create):
+
+| Flag | Description |
+|------|-------------|
+| `-y, --yes` | Use saved defaults, skip prompts |
+| `-x, --no-editor` | Skip opening editor after creation |
+
+For the `clean` command:
+
+| Flag | Description |
+|------|-------------|
+| `-a, --all` | Remove all worktrees (not just merged) |
+
+See [Flags](/commands/flags) for detailed information.
+
+## Getting Started
+
+The most common workflow:
+
+```bash
+# Create a new worktree
+gwt feature-name
+
+# Check status of all worktrees
+gwt status
+
+# Merge and remove when done
+gwt merge feature-name
+
+# Or clean up merged worktrees
+gwt clean
+```
+
+## Version
+
+Current version: **2.0.0**

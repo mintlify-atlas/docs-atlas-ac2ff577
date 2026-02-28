@@ -1,0 +1,123 @@
+---
+title: Installation
+description: Install GWTree globally with npm, pnpm, yarn, or bun
+---
+
+## Requirements
+
+GWTree requires Node.js 18.0.0 or higher.
+
+<Note>
+  Make sure you have git installed and are working within a git repository.
+</Note>
+
+## Install globally
+
+Install GWTree globally to use the `gwt` command anywhere:
+
+<CodeGroup>
+
+```bash npm
+npm install -g gwtree
+```
+
+```bash pnpm
+pnpm add -g gwtree
+```
+
+```bash yarn
+yarn global add gwtree
+```
+
+```bash bun
+bun add -g gwtree
+```
+
+</CodeGroup>
+
+## Verify installation
+
+Check that GWTree is installed correctly:
+
+```bash
+gwt --version
+# Output: 2.0.0
+```
+
+<Tip>
+  You can also use the full command `gwtree` instead of the `gwt` alias.
+</Tip>
+
+## First-time setup
+
+On first run, GWTree creates a config file at `~/.config/gwtree/config.json` with default settings:
+
+```json
+{
+  "editor": "code",
+  "installDeps": true,
+  "lastPm": null
+}
+```
+
+### Configuration options
+
+<ResponseField name="editor" type="string" default="code">
+  Editor to open worktrees in: `code`, `cursor`, `default` (uses $EDITOR), or `none`
+</ResponseField>
+
+<ResponseField name="installDeps" type="boolean" default="true">
+  Automatically install dependencies when creating worktrees
+</ResponseField>
+
+<ResponseField name="lastPm" type="string" default="null">
+  Last used package manager: `pnpm`, `npm`, `yarn`, `bun`, or `null`
+</ResponseField>
+
+## Manage configuration
+
+Open the config file in your editor:
+
+```bash
+gwt config
+```
+
+Reset to default settings:
+
+```bash
+gwt config reset
+```
+
+## Uninstall
+
+To remove GWTree:
+
+<CodeGroup>
+
+```bash npm
+npm uninstall -g gwtree
+```
+
+```bash pnpm
+pnpm remove -g gwtree
+```
+
+```bash yarn
+yarn global remove gwtree
+```
+
+```bash bun
+bun remove -g gwtree
+```
+
+</CodeGroup>
+
+<Note>
+  Configuration files in `~/.config/gwtree/` and worktree records in `~/.gwtree/` will remain after uninstall. Delete these directories manually if needed.
+</Note>
+
+## Next steps
+
+<Card title="Quickstart" icon="rocket" href="/quickstart">
+  Create your first worktree and learn the essential commands
+</Card>

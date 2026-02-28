@@ -1,0 +1,176 @@
+---
+title: Git Worktrees
+description: Understanding git worktrees and why they're essential for parallel development
+---
+
+## What are Git Worktrees?
+
+Git worktrees allow you to check out multiple branches from the same repository simultaneously. Each worktree is a separate working directory linked to the same `.git` repository, enabling you to work on different branches in parallel without switching contexts.
+
+## Why Use Worktrees?
+
+### Traditional Workflow Pain Points
+
+In a traditional git workflow, switching branches requires:
+
+1. **Stashing changes** - Save your uncommitted work
+2. **Switching branches** - `git checkout other-branch`
+3. **Losing context** - Your editor state, running servers, and mental model reset
+4. **Reinstalling dependencies** - If `package.json` changed between branches
+
+### Worktree Advantages
+
+<CardGroup cols={2}>
+  <Card title="No Context Switching" icon="brain">
+    Keep multiple branches active simultaneously. Your editor, terminal, and mental model stay intact.
+  </Card>
+  
+  <Card title="Parallel Development" icon="code-branch">
+    Work on multiple features, bug fixes, or experiments at the same time without conflicts.
+  </Card>
+  
+  <Card title="Independent Dependencies" icon="box">
+    Each worktree has its own `node_modules`, avoiding version conflicts when switching between branches.
+  </Card>
+  
+  <Card title="Clean Separation" icon="folder-tree">
+    Physically separate directories make it impossible to accidentally commit changes to the wrong branch.
+  </Card>
+</CardGroup>
+
+## How GWTree Manages Worktrees
+
+GWTree automates the entire worktree creation workflow. Here's what happens under the hood:
+
+### Repository Structure
+
+When you create a worktree with GWTree, it follows a predictable naming pattern:
+
+```bash
+parent-directory/
+├── my-repo/              # Main repository (origin)
+├── my-repo-feature-auth/ # Worktree for auth feature
+├── my-repo-api/          # Worktree for API work
+└── my-repo-dashboard/    # Worktree for dashboard UI
+```
+
+Each worktree:
+- Lives in the same parent directory as the main repo
+- Has its own working directory and files
+- Shares the same `.git` database (saves disk space)
+- Can be opened in separate editor windows
+
+### Automatic Branch Management
+
+GWTree handles branch conflicts automatically:
+
+```typescript
+// From src/commands/create.ts:234-237
+let newBranchForWorktree = branchName;
+let counter = 1;
+while (branches.includes(newBranchForWorktree)) {
+  newBranchForWorktree = `${branchName}-${counter}`;
+  counter++;
+}
+```
+
+If you try to create a worktree with branch name `feature` but that branch already exists, GWTree automatically names it `feature-1`, `feature-2`, etc.
+
+### Repository Preparation
+
+Before creating a worktree, GWTree ensures your repository is in a clean state:
+
+<Steps>
+  <Step title="Stash uncommitted changes">
+    Saves your work in progress so you don't lose any changes
+    
+    ```bash
+    git stash
+    ```
+  </Step>
+  
+  <Step title="Switch to main branch">
+    Ensures the worktree branches from your primary branch
+    
+    ```bash
+    git checkout main
+    ```
+  </Step>
+  
+  <Step title="Pull latest changes">
+    Updates your local main branch to match the remote
+    
+    ```bash
+    git pull --rebase origin main
+    ```
+  </Step>
+  
+  <Step title="Prune stale worktrees">
+    Removes references to worktrees that no longer exist
+    
+    ```bash
+    git worktree prune
+    ```
+  </Step>
+</Steps>
+
+## Real-World Example
+
+Traditional workflow:
+```bash
+# You're working on feature-auth
+git stash
+git checkout main
+git pull
+git checkout -b hotfix-login
+# Fix the bug
+git checkout feature-auth
+git stash pop
+# Resume work, hope nothing broke
+```
+
+With worktrees:
+```bash
+# You're working in my-repo-feature-auth/
+gwt hotfix-login
+cd ../my-repo-hotfix-login
+# Fix the bug in separate directory
+# feature-auth work is untouched
+```
+
+## Disk Space Efficiency
+
+Worktrees share the repository's `.git` database:
+
+```bash
+my-repo/.git/          # 150 MB - Shared database
+my-repo-auth/          # 5 MB  - Just working files
+my-repo-api/           # 5 MB  - Just working files
+my-repo-dashboard/     # 5 MB  - Just working files
+```
+
+Three worktrees add only ~15 MB, not 450 MB (3 × 150 MB) if you cloned separately.
+
+## When to Use Worktrees
+
+<Tip>
+**Perfect for:**
+- Running multiple AI coding agents in parallel
+- Comparing implementations side-by-side
+- Testing features while developing others
+- Emergency bug fixes during feature development
+- Code review while preserving your work
+</Tip>
+
+<Warning>
+**Not ideal for:**
+- Single-task, linear workflows
+- Very large repositories (>1 GB) where each worktree copy is expensive
+- Teams unfamiliar with git worktrees (requires learning curve)
+</Warning>
+
+## Learn More
+
+<Card title="Multi-Agent Workflow" icon="users" href="/concepts/multi-agent-workflow">
+  Learn how to run Claude Code, Command Code, and Cursor in parallel using worktrees
+</Card>

@@ -1,0 +1,340 @@
+---
+title: Managing Worktrees
+description: List, view status, and remove git worktrees
+---
+
+GWTree provides powerful commands to manage your worktrees throughout their lifecycle.
+
+## List Worktrees
+
+View all worktrees for the current repository:
+
+```bash
+gwt ls
+# or
+gwt list
+```
+
+### List Output
+
+```
+┌  Worktrees for myrepo
+│
+│  ◆  feature-auth
+│  └  /path/to/parent/myrepo-feature-auth
+│
+│  ◆  feature-api
+│  └  /path/to/parent/myrepo-feature-api
+│
+│  ◆  bug-fix
+│  └  /path/to/parent/myrepo-bug-fix
+│
+└  3 worktrees
+```
+
+The list shows:
+- **Branch name**: The git branch for the worktree
+- **Path**: Full filesystem path to the worktree directory
+- **Count**: Total number of worktrees
+
+### Empty List
+
+If no worktrees exist for the repo:
+
+```
+No worktrees found for this repo
+```
+
+## View Status
+
+Get detailed status information for all worktrees:
+
+```bash
+gwt status
+# or
+gwt st
+```
+
+### Status Output
+
+```
+┌  Status for myrepo
+│
+│  ◆  feature-auth  +245 -12
+│  └  ready to merge (3 commits ahead)
+│
+│  ◆  feature-api  +89 -5
+│  └  2 changed, 1 ahead
+│
+│  ◆  bug-fix
+│  └  ✓ merged
+│
+└  1 ready to merge, 1 in progress, 1 merged
+```
+
+### Status Information
+
+For each worktree, the status command shows:
+
+#### Change Statistics
+- **Additions**: Lines added (`+245`)
+- **Deletions**: Lines removed (`-12`)
+- Calculated from `git diff --stat HEAD`
+
+#### Commit Position
+- **Ahead**: Commits ahead of main
+- **Behind**: Commits behind main
+- Calculated from `git rev-list --left-right --count main...branch`
+
+#### Work Status
+- **Changed files**: Uncommitted modifications
+- Calculated from `git status --porcelain`
+
+#### Merge Status
+- **✓ merged**: Branch has been merged to main
+- **ready to merge**: No uncommitted changes, commits ahead
+- **in progress**: Has uncommitted changes or needs sync
+
+### Status Categories
+
+<Tabs>
+  <Tab title="Ready to Merge">
+    **Indicators**:
+    - Green color
+    - Shows "ready to merge (N commits ahead)"
+    - No uncommitted changes
+    - Commits exist ahead of main
+
+    **Example**:
+    ```
+    │  ◆  feature-auth  +245 -12
+    │  └  ready to merge (3 commits ahead)
+    ```
+
+    **Actions**:
+    - Ready for code review
+    - Can be merged with `gwt merge feature-auth`
+    - Can be cleaned up with `gwt clean` after merging
+  </Tab>
+
+  <Tab title="In Progress">
+    **Indicators**:
+    - Yellow color
+    - Shows changed files and/or commit position
+    - Has uncommitted changes or unpushed commits
+
+    **Example**:
+    ```
+    │  ◆  feature-api  +89 -5
+    │  └  2 changed, 1 ahead
+    ```
+
+    **Status details**:
+    - `2 changed`: 2 files with uncommitted changes
+    - `1 ahead`: 1 commit ahead of main
+    - `3 behind`: 3 commits behind main (need to rebase)
+
+    **Actions**:
+    - Continue development
+    - Commit changes
+    - Rebase if behind
+  </Tab>
+
+  <Tab title="Merged">
+    **Indicators**:
+    - Gray color
+    - Shows "✓ merged"
+    - Branch has been merged to main
+
+    **Example**:
+    ```
+    │  ◆  bug-fix
+    │  └  ✓ merged
+    ```
+
+    **Actions**:
+    - Can be safely removed with `gwt clean`
+    - Worktree is no longer needed
+  </Tab>
+</Tabs>
+
+### Status Summary
+
+The bottom line shows aggregated counts:
+
+```
+└  1 ready to merge, 2 in progress, 1 merged
+```
+
+Helps you quickly understand:
+- How many worktrees are ready for review/merge
+- How many are actively being worked on
+- How many can be cleaned up
+
+## Remove Worktrees
+
+Interactively remove worktrees:
+
+```bash
+gwt rm
+# or
+gwt remove
+```
+
+### Remove Workflow
+
+<Steps>
+
+### Step 1: Search for Worktree
+
+A searchable list appears:
+
+```
+┌  Remove Worktree
+│
+◆  Search worktree:
+│  feature-auth myrepo-feature-auth
+│  feature-api myrepo-feature-api
+│  bug-fix myrepo-bug-fix
+```
+
+Start typing to filter the list:
+- Searches branch names
+- Searches directory names
+- Searches paths
+
+### Step 2: Confirm Removal
+
+After selecting a worktree:
+
+```
+◆  Remove myrepo-feature-auth? (Y/n)
+```
+
+Confirming executes:
+1. `git worktree remove "{path}" --force`
+2. Removes the directory if git command fails
+3. Removes from GWTree's tracking database
+
+### Step 3: Success
+
+```
+│
+│  ◆  Removed myrepo-feature-auth
+│  └  /path/to/parent/myrepo-feature-auth
+```
+
+The workflow continues, allowing you to remove more worktrees. Press Ctrl+C or cancel to exit.
+
+</Steps>
+
+### Remove Multiple Worktrees
+
+The remove command continues in a loop, allowing you to remove multiple worktrees without restarting:
+
+1. Select and remove first worktree
+2. List automatically refreshes
+3. Select and remove next worktree
+4. Repeat until done
+5. Cancel to exit
+
+### Force Removal
+
+The `--force` flag ensures removal even if:
+- The worktree has uncommitted changes
+- The worktree has unpushed commits
+- The git repository is in an inconsistent state
+
+If `git worktree remove` fails, GWTree falls back to `rm -rf` to delete the directory.
+
+## Worktree Tracking
+
+GWTree maintains a global database of worktrees at:
+
+```
+~/.gwtree/worktrees.json
+```
+
+### Tracked Information
+
+For each worktree:
+
+```json
+{
+  "path": "/path/to/parent/myrepo-feature-auth",
+  "branch": "feature-auth",
+  "repoRoot": "/path/to/parent/myrepo",
+  "repoName": "myrepo",
+  "createdAt": "2024-02-28T10:30:00.000Z"
+}
+```
+
+### Per-Repository Filtering
+
+All commands (`list`, `status`, `rm`) automatically:
+1. Detect the current repository
+2. Filter worktrees to show only those for the current repo
+3. Verify worktree directories still exist
+
+This means:
+- You can have worktrees for multiple repos
+- Each repo only sees its own worktrees
+- Deleted directories are automatically excluded
+
+## Examples
+
+### Check What Needs Attention
+
+```bash
+cd ~/projects/myrepo
+gwt status
+```
+
+Review the status to see:
+- Which worktrees are ready to merge
+- Which worktrees have uncommitted work
+- Which worktrees can be cleaned up
+
+### List All Worktrees
+
+```bash
+gwt ls
+```
+
+Simple list of branches and paths.
+
+### Remove Old Worktrees
+
+```bash
+gwt rm
+# Type "feature-old" to search
+# Confirm removal
+# Continue removing others or cancel
+```
+
+### Clean Up After Work
+
+```bash
+# Check status
+gwt status
+
+# Merge completed work
+gwt merge feature-auth
+
+# Clean up merged worktrees
+gwt clean
+```
+
+## Comparison Table
+
+| Command | Purpose | Output | Interactive |
+|---------|---------|--------|-------------|
+| `gwt ls` | List worktrees | Branch + path | No |
+| `gwt status` | Detailed status | Changes, commits, merge state | No |
+| `gwt rm` | Remove worktrees | Confirmation prompts | Yes |
+
+## Next Steps
+
+- Learn about [merging and cleanup](/guides/merging-and-cleanup) for completing work
+- Explore [configuration](/guides/configuration) to customize behavior
+- Return to [creating worktrees](/guides/creating-worktrees) for starting new work

@@ -1,0 +1,390 @@
+---
+title: Global Flags
+description: Command-line flags and options for GWTree commands
+---
+
+## Overview
+
+GWTree supports global flags that modify command behavior. Flags can be used with specific commands to override configuration settings or change execution flow.
+
+## Global Flags
+
+### Help and Version
+
+These flags work with any command:
+
+<ParamField path="-h, --help" type="flag">
+  Display help information for the command.
+  
+  ```bash
+  gwt --help
+  gwt list --help
+  gwt merge --help
+  ```
+</ParamField>
+
+<ParamField path="-v, --version" type="flag">
+  Output the current version number.
+  
+  ```bash
+  gwt --version
+  # Output: 2.0.0
+  
+  gwt -v
+  # Output: 2.0.0
+  ```
+</ParamField>
+
+## Create Command Flags
+
+These flags modify the behavior of the default create command:
+
+### -y, --yes
+
+<ParamField path="-y, --yes" type="flag">
+  Use saved defaults and skip all interactive prompts.
+  
+  **Skips prompts for:**
+  - Uncommitted changes handling
+  - Branch switching
+  - Pull from remote
+  - Worktree/branch naming (requires name argument)
+  
+  **Still uses:**
+  - Configured editor
+  - Configured dependency installation
+  - Detected package manager
+</ParamField>
+
+**Usage:**
+
+```bash
+# Quick create with defaults
+gwt feature-auth -y
+
+# Batch create with defaults
+gwt feat-a feat-b feat-c -y
+```
+
+**Behavior with -y:**
+
+| Prompt | Without -y | With -y |
+|--------|------------|----------|
+| Uncommitted changes | Asks to stash | Auto-stashes |
+| Not on main | Asks to switch | Auto-switches |
+| Pull from remote | Asks to pull | Auto-pulls |
+| Worktree name | Prompts | Uses argument |
+
+**Example output:**
+
+```bash
+gwt feature-login -y
+```
+
+```
+┌  Create Git Worktree
+│
+│  ◆  Stash  git stash
+│  └  saves uncommitted changes
+│
+│  ◆  Switch  git checkout main
+│  └  switches to base branch
+│
+│  ◆  Pull  git pull --rebase origin main
+│  └  fetches latest changes
+│
+│  Creating myapp-feature-login branch feature-login from main
+│
+│  ◆  Create  git worktree add -b "feature-login" .../myapp-feature-login "main"
+│  └  /Users/john/projects/myapp-feature-login
+│
+└  Done  cd ../myapp-feature-login
+```
+
+Notice: No interactive prompts!
+
+### -x, --no-editor
+
+<ParamField path="-x, --no-editor" type="flag">
+  Skip opening the editor after worktree creation.
+  
+  Overrides the `editor` configuration setting for this command only.
+</ParamField>
+
+**Usage:**
+
+```bash
+# Create without opening editor
+gwt feature-api -x
+
+# Combine with -y for fully automated creation
+gwt feature-ui -y -x
+
+# Batch create without editors
+gwt task-1 task-2 task-3 -x
+```
+
+**Use cases:**
+
+- **Scripts:** Automated worktree creation
+- **CI/CD:** Non-interactive environments
+- **Batch operations:** Create multiple worktrees without opening many editor windows
+- **Manual navigation:** Open editor yourself later
+
+**Example:**
+
+```bash
+gwt hotfix-123 -y -x
+cd ../myapp-hotfix-123
+code .
+```
+
+## Clean Command Flags
+
+### -a, --all
+
+<ParamField path="-a, --all" type="flag">
+  Remove all worktrees, not just merged ones.
+  
+  <Warning>
+  This removes ALL worktrees including:
+  - Worktrees with uncommitted changes
+  - Worktrees with unmerged commits
+  - Active development branches
+  
+  Use with caution!
+  </Warning>
+</ParamField>
+
+**Usage:**
+
+```bash
+# Remove only merged worktrees
+gwt clean
+
+# Remove ALL worktrees
+gwt clean --all
+
+# Short form
+gwt clean -a
+gwt c -a
+```
+
+**Comparison:**
+
+```bash
+# Check status first
+gwt status
+```
+
+**Output:**
+```
+┌  Status for myapp
+│
+│  ◆  feature-merged
+│  └  ✓ merged
+│
+│  ◆  feature-active  +42 -8
+│  └  3 changed, 5 ahead
+│
+└  1 ready to merge, 1 in progress
+```
+
+**Without -a (default):**
+```bash
+gwt clean
+```
+Removes only `feature-merged`.
+
+**With -a:**
+```bash
+gwt clean -a
+```
+Removes both `feature-merged` AND `feature-active` (losing uncommitted work!).
+
+## Flag Combinations
+
+Flags can be combined in various ways:
+
+### Create with Multiple Flags
+
+```bash
+# Fast mode, no editor
+gwt feature-name -y -x
+
+# Order doesn't matter
+gwt feature-name -x -y
+
+# Works with batch mode
+gwt feat-a feat-b -y -x
+```
+
+### Aliases with Flags
+
+```bash
+# Clean all using alias
+gwt c -a
+
+# Help for specific command
+gwt st --help
+gwt m --help
+```
+
+## Flag Syntax
+
+GWTree supports both short and long flag formats:
+
+| Short | Long | Command |
+|-------|------|----------|
+| `-y` | `--yes` | create |
+| `-x` | `--no-editor` | create |
+| `-a` | `--all` | clean |
+| `-h` | `--help` | all |
+| `-v` | `--version` | all |
+
+**Examples:**
+
+```bash
+# Both are equivalent
+gwt feature -y
+gwt feature --yes
+
+# Both are equivalent
+gwt clean -a
+gwt clean --all
+```
+
+## Flag Positioning
+
+Flags can appear before or after arguments:
+
+```bash
+# All valid
+gwt -y feature-name
+gwt feature-name -y
+gwt -y -x feature-name
+gwt feature-name -y -x
+```
+
+For multiple names:
+```bash
+# All valid
+gwt -y feat-a feat-b
+gwt feat-a feat-b -y
+gwt feat-a -y feat-b  # Also works
+```
+
+## Examples by Use Case
+
+### Fast Development
+
+Quick worktree creation with zero interaction:
+
+```bash
+gwt feature-name -y -x
+```
+
+### Scripting
+
+Automated worktree creation:
+
+```bash
+#!/bin/bash
+# Create worktrees for sprint tasks
+for task in TASK-{1..5}; do
+  gwt "$task" -y -x
+done
+```
+
+### Manual Control
+
+Create but handle editor yourself:
+
+```bash
+gwt feature-api -x
+cd ../myapp-feature-api
+cursor .
+```
+
+### Cleanup
+
+Aggressive cleanup of all worktrees:
+
+```bash
+gwt status
+gwt clean -a
+```
+
+### Help
+
+Get help for specific commands:
+
+```bash
+gwt merge --help
+gwt --help
+gwt status -h
+```
+
+## Banner Suppression
+
+The GWTree banner is automatically hidden when:
+
+- Using `-v` or `--version` flag
+- Using `-h` or `--help` flag  
+- Using `-y` flag with a name argument (fast mode)
+- Running `gwt version` command
+- Running `gwt help` command
+
+**Banner shown:**
+```bash
+gwt feature-name
+```
+
+```
+╔═╗╦ ╦╔╦╗
+║ ╦║║║ ║
+╚═╝╚╩╝ ╩
+
+┌  Create Git Worktree
+...
+```
+
+**Banner hidden:**
+```bash
+gwt feature-name -y
+```
+
+```
+┌  Create Git Worktree
+...
+```
+
+## Configuration vs. Flags
+
+Flags override configuration settings:
+
+**Config file:**
+```json
+{
+  "editor": "code",
+  "installDeps": true
+}
+```
+
+**With flag:**
+```bash
+gwt feature-name -x
+# Editor: none (flag overrides config)
+# InstallDeps: true (uses config)
+```
+
+**Precedence:**
+1. Command-line flags (highest)
+2. Configuration file
+3. Defaults (lowest)
+
+## Related Documentation
+
+- [gwt (create)](/commands/create) - Create command that uses -y and -x flags
+- [gwt clean](/commands/clean) - Clean command that uses -a flag
+- [gwt config](/commands/config) - Configure default behavior

@@ -1,80 +1,285 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Get your first worktree running in minutes with practical examples
 ---
 
-## Get started in three steps
+## Create your first worktree
 
-Get your documentation site running locally and make your first customization.
+Navigate to any git repository and create a worktree:
 
-### Step 1: Set up your local environment
+<Steps>
+  <Step title="Interactive mode">
+    Run `gwt` without arguments for an interactive prompt:
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+    ```bash
+    gwt
+    ```
 
-### Step 2: Deploy your changes
+    You'll be guided through:
+    1. **Name** — Enter name for both worktree and branch (press ESC to set separately)
+    2. **Stash/Switch** — Handle uncommitted changes and switch to main
+    3. **Pull** — Fetch latest changes from remote
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    <Tip>
+      Press ESC during name input to set worktree and branch names separately.
+    </Tip>
+  </Step>
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+  <Step title="Quick mode">
+    Pass a name directly to skip prompts:
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+    ```bash
+    gwt feature-login
+    ```
 
-### Step 3: Go live
+    This creates:
+    - Worktree: `repo-feature-login/`
+    - Branch: `feature-login`
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+    The CLI shows each command as it runs:
 
-## Next steps
+    ```bash
+    │
+    │  ◆  Prune  git worktree prune
+    │  └  removes stale refs
+    │
+    │  ◆  Create  git worktree add -b "feature-login" .../repo-feature-login "main"
+    │  └  /Users/you/projects/repo-feature-login
+    │
+    │  ◆  Install  pnpm install
+    │  └  installs dependencies
+    │
+    │  ◆  Open  code .../repo-feature-login
+    │  └  opens in editor
+    │
+    └  Done  cd ../repo-feature-login
+    ```
+  </Step>
 
-Now that you have your docs running, explore these key features:
+  <Step title="Navigate to worktree">
+    Change to your new worktree directory:
 
-<CardGroup cols={2}>
+    ```bash
+    cd ../repo-feature-login
+    ```
 
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
+    Your editor should already be open with the new worktree.
+  </Step>
+</Steps>
 
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
+## Multi-agent parallel development
 
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
+The real power of GWTree is creating multiple worktrees for parallel AI agent development:
 
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
+```bash
+# Create 3 worktrees instantly
+gwt auth api dashboard -x
+```
 
-</CardGroup>
+This creates three isolated worktrees:
+
+<CodeGroup>
+
+```bash Worktree 1: auth
+repo-auth/
+└── branch: auth
+```
+
+```bash Worktree 2: api
+repo-api/
+└── branch: api
+```
+
+```bash Worktree 3: dashboard
+repo-dashboard/
+└── branch: dashboard
+```
+
+</CodeGroup>
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+  The `-x` flag (or `--no-editor`) skips opening editors — perfect for batch creation.
 </Note>
+
+Now run different AI agents in each worktree:
+- **Claude Code** in `repo-auth/`
+- **Command Code** in `repo-api/`
+- **Cursor** in `repo-dashboard/`
+
+## Fast mode with defaults
+
+Skip all prompts using your saved config:
+
+```bash
+gwt feature-login -y
+```
+
+The `-y` or `--yes` flag uses saved defaults for stash, pull, and editor preferences.
+
+## List worktrees
+
+See all worktrees for the current repo:
+
+```bash
+gwt ls
+# or
+gwt list
+```
+
+Output:
+
+```bash
+╔═╗╦ ╦╔╦╗
+║ ╦║║║ ║
+╚═╝╚╩╝ ╩
+
+Worktrees for repo
+│
+│  ◆  auth
+│  └  /Users/you/projects/repo-auth
+│
+│  ◆  api
+│  └  /Users/you/projects/repo-api
+│
+│  ◆  dashboard
+│  └  /Users/you/projects/repo-dashboard
+│
+└  3 worktrees
+```
+
+## Check status
+
+See the status of all worktrees:
+
+```bash
+gwt status
+# or
+gwt st
+```
+
+Shows for each worktree:
+- Changed files
+- Commits ahead/behind main
+- Merge readiness
+- Line additions/deletions
+
+```bash
+Status for repo
+│
+│  ◆  auth  +127 -43
+│  └  2 changed, 3 ahead
+│
+│  ◆  api  +89 -12
+│  └  ready to merge (2 commits ahead)
+│
+│  ◆  dashboard
+│  └  ✓ merged
+│
+└  1 ready to merge, 1 in progress, 1 merged
+```
+
+## Merge and cleanup
+
+When a feature is complete, merge it back to main:
+
+```bash
+gwt merge api
+```
+
+This automatically:
+1. Switches to main branch
+2. Merges the feature branch
+3. Removes the worktree
+4. Deletes the branch
+
+<Warning>
+  Make sure all changes are committed before merging. The command will fail if there are uncommitted changes.
+</Warning>
+
+## Clean merged worktrees
+
+Remove all worktrees that have been merged to main:
+
+```bash
+gwt clean
+# or
+gwt c
+```
+
+Remove all worktrees (merged or not):
+
+```bash
+gwt clean --all
+# or
+gwt c -a
+```
+
+## Remove specific worktrees
+
+Interactive search and remove:
+
+```bash
+gwt rm
+# or
+gwt remove
+```
+
+Use fuzzy search to find and remove worktrees:
+
+```bash
+? Search worktree: › api
+
+  ❯ api repo-api
+    /Users/you/projects/repo-api
+
+? Remove repo-api? › (Y/n)
+```
+
+## Essential commands
+
+| Command | Description |
+|---------|-------------|
+| `gwt` | Create worktree (interactive) |
+| `gwt <name>` | Quick create with name |
+| `gwt a b c` | Batch create multiple |
+| `gwt <name> -y` | Fast mode, skip prompts |
+| `gwt <name> -x` | Skip opening editor |
+| `gwt ls` | List all worktrees |
+| `gwt status` | Show status dashboard |
+| `gwt merge <name>` | Merge and cleanup |
+| `gwt clean` | Remove merged worktrees |
+| `gwt rm` | Interactive remove |
+| `gwt config` | Open config file |
+
+## Package manager detection
+
+GWTree automatically detects your package manager:
+
+- `pnpm-lock.yaml` → uses `pnpm install`
+- `bun.lockb` → uses `bun install`
+- `yarn.lock` → uses `yarn install`
+- `package-lock.json` → uses `npm install`
+- `package.json` only → defaults to `pnpm install`
+
+<Tip>
+  Set `installDeps: false` in config to disable automatic dependency installation.
+</Tip>
+
+## What's next?
+
+You're ready to use GWTree for parallel AI agent development! Here are some tips:
+
+<CardGroup cols={2}>
+  <Card title="Workflow tip" icon="lightbulb">
+    Use `gwt status` frequently to track progress across all worktrees
+  </Card>
+  <Card title="Clean habit" icon="sparkles">
+    Run `gwt clean` regularly to remove merged worktrees
+  </Card>
+  <Card title="Fast creation" icon="bolt">
+    Use `-x` flag for batch creation: `gwt a b c -x`
+  </Card>
+  <Card title="Configuration" icon="gear">
+    Customize editor and install preferences with `gwt config`
+  </Card>
+</CardGroup>

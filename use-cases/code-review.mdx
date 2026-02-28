@@ -1,0 +1,423 @@
+---
+title: "Code Review with Worktrees"
+description: "Review pull requests without disrupting your current work"
+icon: "magnifying-glass"
+---
+
+Reviewing pull requests traditionally means stashing your work, checking out the PR branch, testing it, then returning to your work. Worktrees eliminate this friction by letting you review PRs in isolated directories.
+
+## The Traditional Pain
+
+Reviewing a PR without worktrees:
+
+1. Stash your current work: `git stash`
+2. Fetch PR branch: `git fetch origin pull/123/head:pr-123`
+3. Checkout PR: `git checkout pr-123`
+4. Install dependencies: `npm install`
+5. Test the changes
+6. Return to your work: `git checkout your-branch`
+7. Unstash: `git stash pop`
+8. Reinstall dependencies: `npm install`
+
+**This is slow, error-prone, and disrupts your flow.**
+
+## Worktree Review Flow
+
+<Steps>
+<Step title="Create review worktree">
+  While working on your feature, create a worktree for the PR:
+
+  ```bash
+  gwt pr-123 -x
+  ```
+
+  The `-x` flag prevents opening an editor, keeping your current editor focused on your work.
+</Step>
+
+<Step title="Fetch and checkout the PR">
+  ```bash
+  cd repo-pr-123
+  gh pr checkout 123
+  ```
+
+  Or manually:
+
+  ```bash
+  git fetch origin pull/123/head:pr-123
+  git checkout pr-123
+  ```
+</Step>
+
+<Step title="Review in isolation">
+  Test the PR without affecting your work:
+
+  ```bash
+  npm install
+  npm test
+  npm run dev  # Test on localhost:3000
+  ```
+
+  Your original work in `repo-feature-login/` is completely untouched.
+</Step>
+
+<Step title="Leave feedback">
+  Add review comments using GitHub CLI:
+
+  ```bash
+  gh pr review 123 --comment -b "Looks good! Just one small issue..."
+  ```
+
+  Or request changes:
+
+  ```bash
+  gh pr review 123 --request-changes -b "Need to fix the validation logic"
+  ```
+</Step>
+
+<Step title="Clean up">
+  After reviewing, remove the worktree:
+
+  ```bash
+  gwt rm  # Interactive selection
+  ```
+
+  Your original work remains untouched. Return to it instantly:
+
+  ```bash
+  cd repo-feature-login
+  ```
+</Step>
+</Steps>
+
+## Multiple PR Reviews
+
+Review multiple PRs simultaneously:
+
+```bash
+# Create worktrees for all PRs needing review
+gwt pr-101 pr-102 pr-103 -x
+```
+
+```bash
+# Review each in parallel
+cd repo-pr-101
+gh pr checkout 101
+npm install && npm test
+
+cd ../repo-pr-102  
+gh pr checkout 102
+npm install && npm test
+
+cd ../repo-pr-103
+gh pr checkout 103
+npm install && npm test
+```
+
+All reviews happen independently without conflicts.
+
+## Review Scenarios
+
+<CardGroup cols={2}>
+<Card title="Quick Approval" icon="check">
+  For simple PRs that just need a quick look:
+  
+  ```bash
+  gwt review-quick -x
+  cd repo-review-quick
+  gh pr checkout 456
+  gh pr view --web  # View in browser
+  gh pr review 456 --approve
+  cd ..
+  gwt rm  # Clean up immediately
+  ```
+</Card>
+
+<Card title="Deep Review" icon="microscope">
+  For complex PRs requiring thorough testing:
+  
+  ```bash
+  gwt review-auth-refactor
+  cd repo-review-auth-refactor
+  gh pr checkout 789
+  npm install
+  npm test
+  npm run dev  # Manual testing
+  # Run through test cases
+  gh pr review 789 --comment
+  ```
+</Card>
+
+<Card title="Review + Test Changes" icon="flask">
+  Test PR with your feature:
+  
+  ```bash
+  # Create worktree for testing
+  gwt test-integration -x
+  cd repo-test-integration
+  # Merge PR branch locally
+  git merge origin/pr-branch
+  # Test integration
+  npm test
+  ```
+</Card>
+
+<Card title="Suggest Changes" icon="pen">
+  Make suggested edits directly:
+  
+  ```bash
+  gwt pr-review-edits
+  cd repo-pr-review-edits  
+  gh pr checkout 234
+  # Make suggested changes
+  git add .
+  git commit -m "Suggested fixes"
+  git push
+  ```
+</Card>
+</CardGroup>
+
+## GitHub CLI Integration
+
+Powerful PR review commands with `gh`:
+
+### List PRs needing review
+
+```bash
+gh pr list --search "review-requested:@me"
+```
+
+### Check out PR directly
+
+```bash
+cd repo-pr-123
+gh pr checkout 123  # Automatically fetches and checks out
+```
+
+### View PR details
+
+```bash
+gh pr view 123
+```
+
+### Review with comments
+
+```bash
+# Approve
+gh pr review 123 --approve -b "LGTM!"
+
+# Request changes
+gh pr review 123 --request-changes -b "Please fix the validation"
+
+# Comment only
+gh pr review 123 --comment -b "Have you considered..."
+```
+
+### Add inline comments
+
+```bash
+gh pr comment 123 --body "Great approach!" --file src/auth.ts --line 42
+```
+
+## Advanced Review Workflows
+
+<AccordionGroup>
+<Accordion title="Compare with main">
+  Review changes side-by-side:
+  
+  ```bash
+  cd repo-pr-123
+  git diff main...HEAD
+  ```
+  
+  Or use a GUI:
+  
+  ```bash
+  code --diff ../repo/src/auth.ts ./src/auth.ts
+  ```
+</Accordion>
+
+<Accordion title="Run performance tests">
+  Benchmark PR against main:
+  
+  ```bash
+  # In PR worktree
+  cd repo-pr-123
+  npm run benchmark > pr-results.txt
+  
+  # In main worktree
+  cd repo
+  npm run benchmark > main-results.txt
+  
+  # Compare
+  diff main-results.txt ../repo-pr-123/pr-results.txt
+  ```
+</Accordion>
+
+<Accordion title="Security review">
+  Check for security issues:
+  
+  ```bash
+  cd repo-pr-123
+  npm audit
+  npm run lint:security
+  git diff main... | grep -i "password\|token\|secret"
+  ```
+</Accordion>
+
+<Accordion title="Visual regression testing">
+  Compare UI changes:
+  
+  ```bash
+  # Main version
+  cd repo
+  npm run dev -- --port 3000
+  npm run screenshot
+  
+  # PR version
+  cd repo-pr-123  
+  npm run dev -- --port 3001
+  npm run screenshot
+  
+  # Compare screenshots
+  npm run compare-screenshots
+  ```
+</Accordion>
+</AccordionGroup>
+
+## Team Review Practices
+
+### Assign yourself as reviewer
+
+Create worktree immediately when assigned:
+
+```bash
+# You get assigned to PR #567
+gwt pr-567 -x
+cd repo-pr-567
+gh pr checkout 567
+npm install
+```
+
+### Batch review sessions
+
+Set up all PRs for your review session:
+
+```bash
+# Get list of PRs assigned to you
+gh pr list --search "review-requested:@me" --json number --jq '.[].number'
+
+# Create worktrees for all of them
+gwt pr-101 pr-102 pr-103 pr-104 -x
+
+# Review each
+for pr in 101 102 103 104; do
+  cd repo-pr-$pr
+  gh pr checkout $pr
+  npm install && npm test
+  cd ..
+done
+```
+
+### Leave detailed feedback
+
+```bash
+cd repo-pr-123
+gh pr review 123 --comment --body "$(cat <<'EOF'
+## Review Comments
+
+### What I liked
+- Clean implementation of auth logic
+- Good test coverage
+
+### Suggestions  
+- Consider extracting validation into a separate function
+- Add JSDoc comments to public methods
+
+### Questions
+- Have you tested this with expired tokens?
+EOF
+)"
+```
+
+## Quick Commands Reference
+
+<CodeGroup>
+```bash Create review worktree
+gwt pr-123 -x
+cd repo-pr-123
+gh pr checkout 123
+```
+
+```bash Quick approve
+gh pr review 123 --approve -b "LGTM!"
+```
+
+```bash Request changes
+gh pr review 123 --request-changes -b "Please fix..."
+```
+
+```bash Clean up after review
+gwt rm
+# Select the PR worktree to remove
+```
+</CodeGroup>
+
+## Best Practices
+
+<Note>
+**Review in fresh worktrees** - Always create a new worktree for PR reviews to ensure a clean environment.
+</Note>
+
+<Tip>
+**Use descriptive names** - Name review worktrees `pr-123` or `review-feature-name` for clarity.
+</Tip>
+
+<Warning>
+**Clean up after reviewing** - Remove review worktrees promptly to avoid clutter: `gwt clean`
+</Warning>
+
+## Troubleshooting
+
+<AccordionGroup>
+<Accordion title="PR checkout fails">
+  If `gh pr checkout` fails:
+  
+  ```bash
+  # Fetch PR manually
+  git fetch origin pull/123/head:pr-123
+  git checkout pr-123
+  ```
+</Accordion>
+
+<Accordion title="Dependency conflicts">
+  If dependencies conflict with your main work:
+  
+  ```bash
+  cd repo-pr-123
+  rm -rf node_modules package-lock.json
+  npm install
+  ```
+  
+  Each worktree has independent `node_modules`.
+</Accordion>
+
+<Accordion title="Port conflicts when testing">
+  Run PR dev server on different port:
+  
+  ```bash
+  PORT=3001 npm run dev
+  ```
+</Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+<Card title="Parallel Agents" icon="split" href="/use-cases/parallel-agents">
+  Run multiple AI agents simultaneously on different branches.
+</Card>
+
+<Card title="Feature Development" icon="code-branch" href="/use-cases/feature-development">
+  Learn the complete feature development workflow.
+</Card>
+</CardGroup>

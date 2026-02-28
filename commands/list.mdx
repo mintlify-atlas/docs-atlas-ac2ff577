@@ -1,0 +1,97 @@
+---
+title: gwt list
+description: List all worktrees for the current repository
+---
+
+## Syntax
+
+```bash
+gwt list
+gwt ls
+```
+
+## Description
+
+Lists all worktrees associated with the current repository. Shows the branch name and full path for each worktree.
+
+This command reads from GWTree's internal worktree registry (`~/.gwtree/worktrees.json`) and filters results to only show worktrees for the current repository.
+
+## Aliases
+
+- `ls` - Short alias for list
+
+## Output Format
+
+The output displays each worktree with its branch name and path:
+
+```
+┌  Worktrees for myapp
+│
+│  ◆  feature-auth
+│  └  /Users/john/projects/myapp-feature-auth
+│
+│  ◆  feature-payment
+│  └  /Users/john/projects/myapp-payment
+│
+│  ◆  bugfix-404
+│  └  /Users/john/projects/myapp-bugfix-404
+│
+└  3 worktrees
+```
+
+## Examples
+
+### List all worktrees
+
+```bash
+gwt list
+```
+
+### Using the short alias
+
+```bash
+gwt ls
+```
+
+## Behavior
+
+1. **Repository Detection** - Verifies you're in a git repository
+2. **Registry Lookup** - Reads worktree records from `~/.gwtree/worktrees.json`
+3. **Filtering** - Shows only worktrees for the current repo (matched by repo name)
+4. **Validation** - Only displays worktrees whose paths still exist on disk
+5. **Count** - Shows total number of worktrees found
+
+## When No Worktrees Exist
+
+If no worktrees are found for the current repository:
+
+```bash
+gwt list
+```
+
+**Output:**
+```
+No worktrees found for this repo
+```
+
+## Comparison with git worktree list
+
+GWTree's `list` command differs from `git worktree list`:
+
+| Feature | `gwt list` | `git worktree list` |
+|---------|------------|---------------------|
+| Shows main repo | No | Yes |
+| Filtered by repo | Yes | Shows all worktrees |
+| Pretty output | Yes | Raw output |
+| Cross-repo tracking | Yes | No |
+
+## Exit Codes
+
+- `0` - Success (worktrees listed or none found)
+- `1` - Error (not in a git repository)
+
+## Related Commands
+
+- [gwt status](/commands/status) - Show detailed status with changes and commits
+- [gwt remove](/commands/remove) - Remove worktrees interactively
+- [gwt clean](/commands/clean) - Remove merged worktrees

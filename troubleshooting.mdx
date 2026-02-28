@@ -1,0 +1,283 @@
+---
+title: Troubleshooting
+description: Common issues and solutions when using GWTree
+---
+
+## Not in a Git Repository
+
+<Warning>
+  **Error**: "Not in a git repository"
+</Warning>
+
+This error occurs when you run `gwt` commands outside of a git repository.
+
+**Solution:**
+
+1. Navigate to a directory inside a git repository:
+   ```bash
+   cd /path/to/your/repo
+   ```
+
+2. Verify you're in a git repository:
+   ```bash
+   git status
+   ```
+
+3. If the directory isn't a git repository, initialize one:
+   ```bash
+   git init
+   ```
+
+## Directory Already Exists
+
+<Warning>
+  **Error**: "Directory already exists: /path/to/worktree"
+</Warning>
+
+This happens when trying to create a worktree with a name that already exists in the parent directory.
+
+**Solution:**
+
+1. Choose a different worktree name:
+   ```bash
+   gwt feature-login-v2
+   ```
+
+2. Or remove the existing directory first:
+   ```bash
+   gwt rm  # Use interactive removal
+   ```
+
+3. Check existing worktrees:
+   ```bash
+   gwt ls
+   ```
+
+## Merge Conflicts
+
+<Warning>
+  **Error**: "Merge failed. Resolve conflicts manually."
+</Warning>
+
+This occurs when using `gwt merge` and there are conflicts between branches.
+
+**Solution:**
+
+1. The merge command will fail and leave you in the main branch with conflicts:
+   ```bash
+   git status  # See conflicting files
+   ```
+
+2. Resolve conflicts manually in your editor
+
+3. Stage the resolved files:
+   ```bash
+   git add .
+   ```
+
+4. Complete the merge:
+   ```bash
+   git commit
+   ```
+
+5. Manually remove the worktree:
+   ```bash
+   gwt rm
+   ```
+
+## Uncommitted Changes
+
+<Note>
+  When creating a new worktree, GWTree detects uncommitted changes and prompts you to handle them.
+</Note>
+
+**Options:**
+
+1. **Stash changes** (recommended):
+   - Select "Stash changes" when prompted
+   - Your changes are saved and can be recovered with `git stash pop`
+
+2. **Ignore and continue**:
+   - Select "Ignore and continue"
+   - Changes remain in the current worktree
+
+3. **Cancel**:
+   - Select "Cancel" to abort worktree creation
+
+## Pull/Rebase Failures
+
+<Warning>
+  **Error**: "Pull failed" during worktree creation
+</Warning>
+
+This can happen when pulling latest changes from remote fails.
+
+**Common causes:**
+
+1. **No network connection**: Ensure you're connected to the internet
+2. **Diverged branches**: Local and remote have different histories
+3. **No remote configured**: Repository doesn't have a remote origin
+
+**Solution:**
+
+```bash
+# Check remote configuration
+git remote -v
+
+# Add remote if missing
+git remote add origin <url>
+
+# Manually pull and resolve
+git pull --rebase origin main
+```
+
+## Worktree Already Registered
+
+<Warning>
+  **Error**: "worktree registered but missing"
+</Warning>
+
+This happens when git has a worktree registered but the directory was manually deleted.
+
+**Solution:**
+
+1. Prune stale worktree references:
+   ```bash
+   git worktree prune
+   ```
+
+2. Try creating the worktree again:
+   ```bash
+   gwt feature-name
+   ```
+
+## Editor Not Opening
+
+<Note>
+  Worktree created successfully but editor didn't open
+</Note>
+
+**Possible causes:**
+
+1. **Editor not installed**: Ensure VS Code or Cursor is installed
+2. **Command not in PATH**: The editor command isn't available
+3. **Wrong configuration**: Editor setting in config doesn't match your setup
+
+**Solution:**
+
+1. Check your editor configuration:
+   ```bash
+   gwt config
+   ```
+
+2. Update editor setting to one of: `code`, `cursor`, `default`, or `none`
+
+3. Verify the editor command works:
+   ```bash
+   code --version  # For VS Code
+   cursor --version  # For Cursor
+   ```
+
+4. Skip editor opening with `-x` flag:
+   ```bash
+   gwt feature-name -x
+   ```
+
+## Dependency Installation Failed
+
+<Warning>
+  **Error**: "failed to install" after creating worktree
+</Warning>
+
+This happens when automatic dependency installation fails.
+
+**Solution:**
+
+1. Navigate to the worktree:
+   ```bash
+   cd ../repo-name
+   ```
+
+2. Manually install dependencies:
+   ```bash
+   pnpm install  # or npm/yarn/bun
+   ```
+
+3. Or disable automatic installation:
+   ```bash
+   gwt config
+   # Set installDeps to false
+   ```
+
+## Branch Name Conflicts
+
+<Note>
+  GWTree automatically handles branch name conflicts by appending `-1`, `-2`, etc.
+</Note>
+
+If you want separate worktree and branch names:
+
+1. Press **ESC** when prompted for "Worktree & branch name:"
+2. Enter different names for worktree and branch
+
+## Cannot Merge with Uncommitted Changes
+
+<Warning>
+  **Error**: "Worktree has uncommitted changes. Commit or stash them first."
+</Warning>
+
+The `gwt merge` command requires a clean working directory.
+
+**Solution:**
+
+1. Navigate to the worktree:
+   ```bash
+   cd ../repo-feature
+   ```
+
+2. Commit your changes:
+   ```bash
+   git add .
+   git commit -m "Your message"
+   ```
+
+3. Or stash them:
+   ```bash
+   git stash
+   ```
+
+4. Try merging again:
+   ```bash
+   gwt merge feature
+   ```
+
+## Node Version Issues
+
+<Warning>
+  **Error**: Node version compatibility issues
+</Warning>
+
+GWTree requires **Node.js 18.0.0 or higher**.
+
+**Solution:**
+
+1. Check your Node version:
+   ```bash
+   node --version
+   ```
+
+2. Upgrade Node.js:
+   - Using [nvm](https://github.com/nvm-sh/nvm): `nvm install 18`
+   - Using [fnm](https://github.com/Schniz/fnm): `fnm install 18`
+   - Download from [nodejs.org](https://nodejs.org)
+
+## Getting Help
+
+If you encounter issues not covered here:
+
+1. Check existing issues: [github.com/ahmadawais/gwtree/issues](https://github.com/ahmadawais/gwtree/issues)
+2. Create a new issue with:
+   - Error message
+   - Steps to reproduce
+   - `gwt --version` output
+   - Operating system

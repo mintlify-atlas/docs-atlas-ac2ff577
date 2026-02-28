@@ -1,0 +1,190 @@
+---
+title: gwt remove
+description: Remove worktrees interactively with search
+---
+
+## Syntax
+
+```bash
+gwt remove
+gwt rm
+```
+
+## Description
+
+Interactively remove worktrees for the current repository. Provides a searchable interface to select and remove worktrees one at a time.
+
+The command continues to prompt for worktrees to remove until you cancel (Ctrl+C or ESC).
+
+## Aliases
+
+- `rm` - Short alias for remove
+
+## Interactive Flow
+
+The command provides an interactive search interface:
+
+```
+┌  Remove Worktree
+│
+◇  Search worktree:
+│  feature-
+│  
+│  Results:
+│  • feature-auth myapp-feature-auth
+│  • feature-payment myapp-payment
+│
+◇  Remove myapp-feature-auth?
+│  Yes
+│
+│  ◆  Removed myapp-feature-auth
+│  └  /Users/john/projects/myapp-feature-auth
+│
+◇  Search worktree:
+│  [continuing...]
+```
+
+## Examples
+
+### Remove worktrees interactively
+
+```bash
+gwt remove
+```
+
+### Using the short alias
+
+```bash
+gwt rm
+```
+
+## Search Functionality
+
+The search is case-insensitive and matches against:
+
+- Branch name (e.g., `feature-auth`)
+- Worktree directory name (e.g., `myapp-feature-auth`)
+- Full path (e.g., `/Users/john/projects/myapp-feature-auth`)
+
+**Example searches:**
+
+- Type `feat` - Shows all worktrees with "feat" in branch or path
+- Type `auth` - Shows worktrees containing "auth"
+- Type `projects/` - Shows worktrees in a specific directory
+
+## Confirmation
+
+Before removing each worktree, you'll see a confirmation prompt:
+
+```
+◇  Remove myapp-feature-auth?
+│  ● Yes
+│  ○ No
+```
+
+- Select "Yes" to remove the worktree
+- Select "No" to skip and continue searching
+- Press ESC or Ctrl+C to exit
+
+## Removal Process
+
+For each confirmed removal:
+
+1. **Git Command** - Executes `git worktree remove "<path>" --force`
+2. **Fallback** - If git command fails, uses filesystem removal (`rm -rf`)
+3. **Registry Update** - Removes entry from `~/.gwtree/worktrees.json`
+4. **Confirmation** - Shows success or error message
+
+**Success output:**
+```
+│  ◆  Removed myapp-feature-auth
+│  └  /Users/john/projects/myapp-feature-auth
+```
+
+**Error output:**
+```
+│  ◆  Failed to remove myapp-feature-auth
+│  └  /Users/john/projects/myapp-feature-auth
+```
+
+## Continuous Mode
+
+After removing a worktree, the search prompt appears again, allowing you to remove multiple worktrees in one session:
+
+```bash
+gwt remove
+# Remove first worktree
+# Search prompt appears again
+# Remove second worktree
+# Search prompt appears again
+# Press ESC to exit
+```
+
+## Exiting
+
+To exit the remove command:
+
+- Press **ESC** during search
+- Press **Ctrl+C** at any time
+
+You'll see:
+```
+│
+└  Done
+```
+
+## When No Worktrees Exist
+
+If no worktrees are found:
+
+```
+│
+└  No worktrees found for myrepo
+```
+
+## Force Removal
+
+The command always uses `--force` flag with `git worktree remove` to handle:
+
+- Worktrees with uncommitted changes
+- Worktrees with untracked files
+- Modified worktrees
+
+## Safety Features
+
+1. **Confirmation Required** - Never removes without explicit confirmation
+2. **Search First** - See what you're removing before confirming
+3. **One at a Time** - Removes worktrees sequentially, not in batch
+4. **Registry Cleanup** - Automatically updates internal tracking
+
+## Branch Handling
+
+The `remove` command only removes the worktree directory and registry entry. The git branch remains intact.
+
+To remove the branch as well, use:
+
+```bash
+# After removing the worktree
+git branch -d branch-name
+```
+
+Or use [`gwt merge`](/commands/merge) which removes both worktree and branch.
+
+## Comparison with Other Commands
+
+| Command | Purpose | Confirmation | Batch |
+|---------|---------|--------------|-------|
+| `gwt remove` | Interactive removal | Per worktree | No |
+| `gwt clean` | Remove merged | Once | Yes |
+| `gwt merge` | Merge & remove | Per operation | No |
+
+## Exit Codes
+
+- `0` - Success (worktrees removed or operation cancelled)
+- `1` - Error (not in a git repository)
+
+## Related Commands
+
+- [gwt clean](/commands/clean) - Remove merged worktrees in batch
+- [gwt merge](/commands/merge) - Merge branch to main and remove worktree
+- [gwt list](/commands/list) - List all worktrees

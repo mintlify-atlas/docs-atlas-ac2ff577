@@ -1,0 +1,287 @@
+---
+title: gwt status
+description: Show detailed status of all worktrees including changes and commits
+---
+
+## Syntax
+
+```bash
+gwt status
+gwt st
+```
+
+## Description
+
+Shows comprehensive status information for all worktrees in the current repository, including:
+
+- Uncommitted changes
+- Lines added/deleted
+- Commits ahead of main
+- Commits behind main
+- Merge status
+
+This command provides a quick overview of all parallel work in progress.
+
+## Aliases
+
+- `st` - Short alias for status
+
+## Output Format
+
+```
+┌  Status for myapp
+│
+│  ◆  feature-auth  +245 -12
+│  └  ready to merge (3 commits ahead)
+│
+│  ◆  feature-payment  +89 -5
+│  └  2 changed, 5 ahead
+│
+│  ◆  bugfix-404
+│  └  ✓ merged
+│
+│  ◆  refactor-api  +156 -203
+│  └  1 changed, 8 ahead, 2 behind
+│
+└  1 ready to merge, 2 in progress, 1 merged
+```
+
+## Status Indicators
+
+### Ready to Merge (Green)
+
+Shows when a worktree:
+- Has no uncommitted changes
+- Has commits ahead of main
+- Is not behind main
+
+```
+│  ◆  feature-auth  +245 -12
+│  └  ready to merge (3 commits ahead)
+```
+
+### In Progress (Yellow)
+
+Shows when a worktree has:
+- Uncommitted changes
+- Or is behind main
+
+```
+│  ◆  feature-payment  +89 -5
+│  └  2 changed, 5 ahead
+```
+
+### Merged (Gray/Dim)
+
+Shows when the branch has been merged to main:
+
+```
+│  ◆  bugfix-404
+│  └  ✓ merged
+```
+
+### Clean (Dim)
+
+Shows when there are no changes or commits:
+
+```
+│  ◆  experimental
+│  └  no changes
+```
+
+## Status Components
+
+### Diff Stats
+
+Shows additions and deletions since last commit:
+
+```
++245 -12
+```
+
+- Green `+245` - Lines added
+- Red `-12` - Lines deleted
+
+Only shown when there are uncommitted changes.
+
+### Changed Files
+
+Number of files with uncommitted changes:
+
+```
+2 changed
+```
+
+### Commits Ahead
+
+Commits in the worktree branch not in main:
+
+```
+5 ahead
+```
+
+### Commits Behind
+
+Commits in main not in the worktree branch:
+
+```
+2 behind
+```
+
+Indicates the worktree is out of sync with main.
+
+### Summary Line
+
+The bottom line shows aggregate counts:
+
+```
+└  1 ready to merge, 2 in progress, 1 merged
+```
+
+- **Ready to merge** - Worktrees with no changes and commits ahead
+- **In progress** - Worktrees with changes or behind main
+- **Merged** - Worktrees whose branches are merged to main
+
+## Examples
+
+### Check all worktree status
+
+```bash
+gwt status
+```
+
+### Using the short alias
+
+```bash
+gwt st
+```
+
+### Example Output Scenarios
+
+#### New worktree, no changes
+
+```
+│  ◆  feature-new
+│  └  no changes
+```
+
+#### Active development
+
+```
+│  ◆  feature-auth  +142 -8
+│  └  5 changed, 2 ahead
+```
+
+#### Ready for merge
+
+```
+│  ◆  feature-complete  +500 -100
+│  └  ready to merge (8 commits ahead)
+```
+
+#### Behind main
+
+```
+│  ◆  feature-old  +20 -5
+│  └  1 changed, 3 ahead, 10 behind
+```
+
+#### Already merged
+
+```
+│  ◆  hotfix-123
+│  └  ✓ merged
+```
+
+## When No Worktrees Exist
+
+```bash
+gwt status
+```
+
+**Output:**
+```
+No worktrees found for this repo
+```
+
+## Use Cases
+
+### Daily Standup
+
+Quickly see status of all active work:
+
+```bash
+gwt status
+```
+
+### Before Clean
+
+Verify which worktrees are merged before cleaning:
+
+```bash
+gwt status
+gwt clean
+```
+
+### Track Progress
+
+Monitor multiple features in development:
+
+```bash
+gwt status
+# Shows which features are ahead, behind, or ready
+```
+
+### After Pull
+
+See if worktrees are behind after pulling main:
+
+```bash
+cd main-repo
+git pull
+gwt status
+# Check for "behind" indicators
+```
+
+## Technical Details
+
+### Status Calculation
+
+For each worktree, the command runs:
+
+```bash
+# Uncommitted changes
+git status --porcelain
+
+# Diff statistics
+git diff --stat HEAD
+
+# Commits ahead/behind
+git rev-list --left-right --count main...branch
+
+# Merge status
+git branch --merged main
+```
+
+### Main Branch Detection
+
+Automatically detects main branch:
+
+1. Looks for `main` branch
+2. Falls back to `master` branch
+3. Defaults to `main` if neither exists
+
+## Performance
+
+The status command runs git operations for each worktree. For repositories with many worktrees, this may take a few seconds.
+
+## Exit Codes
+
+- `0` - Success (status displayed or no worktrees found)
+- `1` - Error (not in a git repository)
+
+## Related Commands
+
+- [gwt list](/commands/list) - Simple list of worktrees without status
+- [gwt clean](/commands/clean) - Remove merged worktrees
+- [gwt merge](/commands/merge) - Merge ready worktrees

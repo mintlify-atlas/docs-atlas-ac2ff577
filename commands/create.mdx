@@ -1,0 +1,288 @@
+---
+title: gwt (create)
+description: Create new git worktree(s) with automated setup
+---
+
+## Syntax
+
+```bash
+gwt [names...] [options]
+```
+
+## Description
+
+The default command creates one or more git worktrees with automated setup including dependency installation and editor integration. When no name is provided, it prompts for input. When multiple names are provided, it creates multiple worktrees in batch mode.
+
+## Arguments
+
+<ParamField path="names" type="string[]" optional>
+  Name(s) for worktree and branch. If omitted, prompts for input. If multiple names provided (e.g., `gwt foo bar`), creates multiple worktrees in batch mode.
+</ParamField>
+
+## Options
+
+<ParamField path="-y, --yes" type="flag">
+  Use saved defaults and skip all prompts. Useful for quick worktree creation with pre-configured settings.
+</ParamField>
+
+<ParamField path="-x, --no-editor" type="flag">
+  Skip opening the editor after worktree creation, even if configured in settings.
+</ParamField>
+
+## Behavior
+
+When creating a worktree, GWTree performs the following steps:
+
+1. **Validation** - Checks if you're in a git repository
+2. **Change handling** - Detects uncommitted changes and offers to stash them
+3. **Branch switching** - Switches to main/master if not already there
+4. **Update** - Pulls latest changes from origin (if remote exists)
+5. **Naming** - Prompts for worktree and branch names (or uses provided arguments)
+6. **Creation** - Creates worktree with pattern `repo-name-suffix`
+7. **Dependencies** - Installs dependencies if configured (auto-detects package manager)
+8. **Editor** - Opens in configured editor if not disabled
+
+## Interactive Modes
+
+### Single Worktree Mode
+
+When no arguments are provided, GWTree prompts for a combined worktree/branch name:
+
+```bash
+gwt
+```
+
+**Example output:**
+```
+╔═╗╦ ╦╔╦╗
+║ ╦║║║ ║
+╚═╝╚╩╝ ╩
+
+┌  Create Git Worktree
+│
+│  /Users/john/projects/myapp-<name>
+│  Press ESC to set worktree and branch names separately
+│
+◇  Worktree & branch name:
+│  feature-auth
+│
+│  ◆  Prune  git worktree prune
+│  └  removes stale refs
+│
+│  ◆  Create  git worktree add -b "feature-auth" .../myapp-feature-auth "main"
+│  └  /Users/john/projects/myapp-feature-auth
+│
+│  ◆  Install  pnpm install
+│  └  installs dependencies
+│
+│  ◆  Open  code .../myapp-feature-auth
+│  └  opens in editor
+│
+└  Done  cd ../myapp-feature-auth
+```
+
+### Separate Names Mode
+
+Press ESC during name prompt to set worktree and branch names separately:
+
+```
+◇  Worktree & branch name:
+│  [ESC pressed]
+│
+│  /Users/john/projects/myapp-<worktree>
+│
+◇  Worktree name:
+│  feature-impl
+│
+◇  Branch name:
+│  feature/auth-implementation
+```
+
+This creates worktree `myapp-feature-impl` with branch `feature/auth-implementation`.
+
+### Command Line Mode
+
+Provide the name as an argument:
+
+```bash
+gwt feature-auth
+```
+
+Skips the name prompt and creates `repo-name-feature-auth` worktree with `feature-auth` branch.
+
+### Batch Mode
+
+Create multiple worktrees at once:
+
+```bash
+gwt feature-a feature-b bugfix-123
+```
+
+**Example output:**
+```
+┌  Create 3 Git Worktrees
+│
+│  ◆  Prune  git worktree prune
+│  └  removes stale refs
+│
+│  ◆  Create  git worktree add -b "feature-a" .../myapp-feature-a
+│  └  /Users/john/projects/myapp-feature-a
+│
+│  ◆  Install  pnpm install (myapp-feature-a)
+│  └  dependencies installed
+│
+│  ◆  Create  git worktree add -b "feature-b" .../myapp-feature-b
+│  └  /Users/john/projects/myapp-feature-b
+│
+│  ◆  Install  pnpm install (myapp-feature-b)
+│  └  dependencies installed
+│
+│  ◆  Create  git worktree add -b "bugfix-123" .../myapp-bugfix-123
+│  └  /Users/john/projects/myapp-bugfix-123
+│
+│  ◆  Install  pnpm install (myapp-bugfix-123)
+│  └  dependencies installed
+│
+└  Done  Created 3 worktrees
+
+   cd commands:
+   cd ../myapp-feature-a
+   cd ../myapp-feature-b
+   cd ../myapp-bugfix-123
+```
+
+## Examples
+
+### Basic Usage
+
+Create a worktree interactively:
+
+```bash
+gwt
+```
+
+### Quick Creation
+
+Create a worktree with a specific name:
+
+```bash
+gwt feature-login
+```
+
+Creates `myrepo-feature-login` worktree with `feature-login` branch.
+
+### Fast Mode
+
+Use saved defaults, skip all prompts:
+
+```bash
+gwt feature-payment -y
+```
+
+### No Editor
+
+Create without opening editor:
+
+```bash
+gwt bugfix-404 -x
+```
+
+### Batch Creation
+
+Create multiple worktrees:
+
+```bash
+gwt feat-api feat-ui docs
+```
+
+### Combined Flags
+
+Quick batch creation without editor:
+
+```bash
+gwt task-1 task-2 task-3 -y -x
+```
+
+## Branch Naming
+
+If a branch with the specified name already exists, GWTree automatically appends a counter:
+
+```bash
+gwt feature
+# Creates branch: feature
+
+gwt feature
+# Creates branch: feature-1
+
+gwt feature
+# Creates branch: feature-2
+```
+
+## Worktree Naming Pattern
+
+Worktrees are always created as siblings to the main repository:
+
+```
+projects/
+├── myrepo/              # Main repository
+├── myrepo-feature-a/    # Worktree 1
+├── myrepo-feature-b/    # Worktree 2
+└── myrepo-bugfix-123/   # Worktree 3
+```
+
+## Package Manager Detection
+
+GWTree automatically detects the package manager from lock files:
+
+- `pnpm-lock.yaml` → `pnpm install`
+- `bun.lockb` → `bun install`
+- `yarn.lock` → `yarn install`
+- `package-lock.json` → `npm install`
+- `package.json` only → `pnpm install` (default)
+
+The detected package manager is saved for future worktrees.
+
+## Configuration
+
+The create command respects these config settings:
+
+- **editor** - Which editor to open (`code`, `cursor`, `default`, `none`)
+- **installDeps** - Whether to install dependencies automatically
+- **lastPm** - Last used package manager (auto-detected)
+
+See [gwt config](/commands/config) to modify these settings.
+
+## Prompts (Interactive Mode)
+
+When not using `-y` flag, you may see these prompts:
+
+### Uncommitted Changes
+
+```
+◆  Uncommitted changes detected:
+│  ○ Stash changes
+│  ○ Ignore and continue
+│  ○ Cancel
+```
+
+### Not on Main Branch
+
+```
+◆  Not on main (currently on feature-old):
+│  ○ Switch to main
+│  ○ Ignore and continue
+│  ○ Cancel
+```
+
+### Pull Latest Changes
+
+```
+◆  Pull latest from origin/main?
+│  ○ Yes, git pull --rebase
+│  ○ Skip
+```
+
+## Exit Codes
+
+- `0` - Success
+- `1` - Error (not a git repository, directory exists, git command failed)

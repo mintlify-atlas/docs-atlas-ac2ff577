@@ -1,0 +1,422 @@
+---
+title: Merging and Cleanup
+description: Merge completed work and clean up worktrees
+---
+
+GWTree provides commands to merge your work back to the main branch and automatically clean up worktrees when they're no longer needed.
+
+## Merge Command
+
+Merge a worktree's branch to main and remove the worktree:
+
+```bash
+gwt merge <name>
+# or
+gwt m <name>
+```
+
+### Finding Worktrees by Name
+
+The merge command accepts different name formats:
+
+```bash
+# By branch name
+gwt merge feature-auth
+
+# By worktree directory name
+gwt merge myrepo-feature-auth
+
+# By worktree suffix
+gwt merge feature-auth
+```
+
+GWTree searches for matches in this order:
+1. Exact branch name match
+2. Worktree directory name match
+3. Worktree suffix match (without repo prefix)
+
+### Merge Workflow
+
+<Steps>
+
+### Step 1: Validate Worktree
+
+GWTree verifies:
+- The worktree exists for the current repo
+- The worktree directory is still present
+
+```
+┌  Merge feature-auth to main
+```
+
+### Step 2: Check for Uncommitted Changes
+
+The merge command requires a clean working directory:
+
+```bash
+# If changes exist
+✖ Worktree has uncommitted changes. Commit or stash them first.
+```
+
+You must either:
+- Commit the changes: `cd ../myrepo-feature-auth && git add . && git commit`
+- Stash the changes: `cd ../myrepo-feature-auth && git stash`
+
+### Step 3: Switch to Main
+
+GWTree switches the main repository to the main branch:
+
+```
+│
+│  ◆  Switch  git checkout main
+│  └  switched to main
+```
+
+This runs `git checkout main` in the repository root (not the worktree).
+
+### Step 4: Merge Branch
+
+The worktree's branch is merged into main:
+
+```
+│
+│  ◆  Merge  git merge feature-auth
+│  └  merged to main
+```
+
+Runs `git merge feature-auth` in the main repository.
+
+### Step 5: Remove Worktree
+
+The worktree directory is removed:
+
+```
+│
+│  ◆  Remove  git worktree remove .../myrepo-feature-auth
+│  └  worktree removed
+```
+
+Executes:
+1. `git worktree remove "{path}" --force`
+2. Falls back to `rm -rf` if needed
+3. Removes from GWTree tracking database
+
+### Step 6: Delete Branch
+
+The feature branch is deleted:
+
+```
+│
+│  ◆  Branch  git branch -d feature-auth
+│  └  branch deleted
+│
+└  Done  Merged and cleaned up feature-auth
+```
+
+Runs `git branch -d feature-auth` to clean up the branch.
+
+</Steps>
+
+### Merge Failures
+
+#### Uncommitted Changes
+
+```bash
+$ gwt merge feature-auth
+✖ Worktree has uncommitted changes. Commit or stash them first.
+```
+
+**Solution**: Commit or stash changes before merging.
+
+#### Merge Conflicts
+
+```
+│
+│  ◆  Merge  git merge feature-auth
+│  └  CONFLICT (content): Merge conflict in src/app.ts
+│
+✖ Merge failed. Resolve conflicts manually.
+```
+
+**Solution**: 
+1. The main repository is left in a conflicted state
+2. Navigate to the main repo
+3. Resolve conflicts manually
+4. Complete the merge with `git commit`
+5. Remove the worktree manually with `gwt rm`
+
+## Clean Command
+
+Automatically remove worktrees that have been merged to main:
+
+```bash
+gwt clean
+# or
+gwt c
+```
+
+### Clean Merged Worktrees
+
+By default, `gwt clean` removes only merged worktrees:
+
+```
+┌  Clean Merged Worktrees
+│
+│  Will remove:
+│  •  bug-fix myrepo-bug-fix
+│  •  feature-old myrepo-feature-old
+│
+◆  Remove 2 worktrees? (Y/n)
+```
+
+### How Merge Detection Works
+
+GWTree determines if a worktree is merged by running:
+
+```bash
+git branch --merged main
+```
+
+A worktree is considered merged if its branch appears in this list.
+
+### Clean All Worktrees
+
+Remove ALL worktrees regardless of merge status:
+
+```bash
+gwt clean --all
+# or
+gwt clean -a
+```
+
+```
+┌  Clean All Worktrees
+│
+│  Will remove:
+│  •  feature-auth myrepo-feature-auth
+│  •  feature-api myrepo-feature-api
+│  •  bug-fix myrepo-bug-fix
+│
+◆  Remove 3 worktrees? (Y/n)
+```
+
+<Warning>
+  Using `--all` removes worktrees even if they have:
+  - Uncommitted changes
+  - Unpushed commits
+  - Unmerged work
+
+  Make sure to review your worktrees with `gwt status` first.
+</Warning>
+
+### Clean Workflow
+
+<Steps>
+
+### Step 1: Scan Worktrees
+
+GWTree scans all worktrees for the current repo and checks their merge status.
+
+### Step 2: Show Preview
+
+Lists all worktrees that will be removed:
+
+```
+│  Will remove:
+│  •  bug-fix myrepo-bug-fix
+│  •  feature-old myrepo-feature-old
+```
+
+### Step 3: Confirm
+
+Prompts for confirmation:
+
+```
+◆  Remove 2 worktrees? (Y/n)
+```
+
+Cancelling exits without removing anything.
+
+### Step 4: Remove Each Worktree
+
+For each worktree:
+
+```
+│
+│  ◆  Removed myrepo-bug-fix
+│  └  /path/to/parent/myrepo-bug-fix
+│
+│  ◆  Removed myrepo-feature-old
+│  └  /path/to/parent/myrepo-feature-old
+│
+└  Done  Removed 2 worktrees
+```
+
+Removal steps:
+1. `git worktree remove "{path}" --force`
+2. Falls back to `rm -rf` if needed
+3. Removes from tracking database
+
+</Steps>
+
+### No Worktrees to Clean
+
+If no worktrees match the criteria:
+
+```
+┌  Clean Merged Worktrees
+│
+└  No worktrees to clean
+```
+
+## Recommended Workflow
+
+Combine commands for an efficient workflow:
+
+### 1. Check Status
+
+See which worktrees are ready:
+
+```bash
+gwt status
+```
+
+Output:
+```
+│  ◆  feature-auth  +245 -12
+│  └  ready to merge (3 commits ahead)
+│
+│  ◆  feature-api  +89 -5
+│  └  2 changed, 1 ahead
+│
+│  ◆  bug-fix
+│  └  ✓ merged
+│
+└  1 ready to merge, 1 in progress, 1 merged
+```
+
+### 2. Merge Ready Worktrees
+
+Merge worktrees that are ready:
+
+```bash
+gwt merge feature-auth
+```
+
+This:
+- Merges the branch to main
+- Removes the worktree
+- Deletes the branch
+
+### 3. Clean Up Merged Worktrees
+
+Remove any remaining merged worktrees:
+
+```bash
+gwt clean
+```
+
+This removes worktrees that were merged elsewhere (like through PRs).
+
+### 4. Continue Working
+
+Focus on in-progress worktrees:
+
+```bash
+gwt status
+```
+
+Output:
+```
+│  ◆  feature-api  +89 -5
+│  └  2 changed, 1 ahead
+│
+└  1 in progress
+```
+
+## Examples
+
+### Merge Single Worktree
+
+```bash
+# Complete your work
+cd ../myrepo-feature-auth
+git add .
+git commit -m "Complete feature"
+
+# Merge to main
+cd ../myrepo
+gwt merge feature-auth
+```
+
+### Clean After PR Merges
+
+After merging PRs on GitHub:
+
+```bash
+cd myrepo
+git pull origin main
+gwt clean
+```
+
+This removes local worktrees whose branches were merged remotely.
+
+### Emergency Cleanup
+
+Remove all worktrees quickly:
+
+```bash
+gwt clean --all
+```
+
+<Warning>
+  This removes all worktrees including those with uncommitted changes.
+</Warning>
+
+### Selective Merge
+
+```bash
+# Check what's ready
+gwt status
+
+# Merge only completed work
+gwt merge feature-auth
+gwt merge bug-fix
+
+# Keep working on others
+```
+
+## Comparison Table
+
+| Command | Purpose | Removes | Merges | Deletes Branch |
+|---------|---------|---------|--------|----------------|
+| `gwt merge <name>` | Merge specific worktree | Yes | Yes | Yes |
+| `gwt clean` | Remove merged worktrees | Yes | No | No |
+| `gwt clean --all` | Remove all worktrees | Yes | No | No |
+| `gwt rm` | Manually remove worktrees | Yes | No | No |
+
+## When to Use Each Command
+
+### Use `gwt merge` when:
+- You're ready to merge work to main
+- You want to merge and clean up in one step
+- You're working with local branches (no PR)
+- You want the branch deleted automatically
+
+### Use `gwt clean` when:
+- Branches were merged via pull requests
+- You have multiple merged worktrees to remove
+- You want to preview before removing
+- You want to clean up old worktrees
+
+### Use `gwt rm` when:
+- You want to abandon work without merging
+- You need fine-grained control over removal
+- You want to remove specific worktrees
+- You want to search and select interactively
+
+## Next Steps
+
+- Learn about [configuration](/guides/configuration) to customize behavior
+- Review [managing worktrees](/guides/managing-worktrees) for tracking commands
+- Return to [creating worktrees](/guides/creating-worktrees) to start new work

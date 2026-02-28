@@ -1,0 +1,401 @@
+---
+title: FAQ
+description: Frequently asked questions about GWTree
+---
+
+## General
+
+<AccordionGroup>
+  <Accordion title="What is GWTree?">
+    GWTree is a git worktree manager designed for parallel development. It simplifies creating and managing multiple worktrees, making it perfect for running multiple AI coding agents (Claude Code, Command Code, Cursor) simultaneously on different features.
+  </Accordion>
+
+  <Accordion title="What are git worktrees?">
+    Git worktrees allow you to have multiple working directories attached to the same repository. Each worktree can have a different branch checked out, enabling you to work on multiple features in parallel without switching branches or stashing changes.
+
+    Traditional workflow:
+    ```bash
+    git stash
+    git checkout feature-a
+    # work on feature-a
+    git checkout main
+    git stash pop
+    ```
+
+    With worktrees:
+    ```bash
+    gwt feature-a  # Creates separate directory
+    cd ../repo-feature-a  # Work here independently
+    ```
+  </Accordion>
+
+  <Accordion title="How is GWTree different from git worktree?">
+    GWTree provides a streamlined interface over git's native worktree commands:
+
+    - **Smart defaults**: Automatically handles branch creation, naming, and directory structure
+    - **Interactive prompts**: Guides you through worktree creation
+    - **Batch creation**: Create multiple worktrees with one command
+    - **Status dashboard**: See all worktrees' status at a glance
+    - **Smart cleanup**: Auto-remove merged worktrees
+    - **Merge helper**: One command to merge, cleanup, and delete branches
+    - **Editor integration**: Automatically opens worktrees in VS Code or Cursor
+    - **Dependency handling**: Auto-installs dependencies in new worktrees
+  </Accordion>
+
+  <Accordion title="Why use GWTree for AI coding agents?">
+    AI coding agents (Claude Code, Command Code, Cursor) work best when they have isolated environments:
+
+    - **No conflicts**: Each agent works on its own branch
+    - **Parallel execution**: Run multiple agents simultaneously
+    - **Clean merges**: Merge each feature independently when ready
+    - **Instant setup**: `gwt a b c -x` creates 3 worktrees in seconds
+
+    Example workflow:
+    ```bash
+    gwt auth api dashboard -x  # Create 3 worktrees
+    # Claude Code → repo-auth/
+    # Command Code → repo-api/
+    # Cursor → repo-dashboard/
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Installation & Setup
+
+<AccordionGroup>
+  <Accordion title="How do I install GWTree?">
+    Install globally with npm:
+
+    ```bash
+    npm install -g gwtree
+    ```
+
+    Or with other package managers:
+
+    ```bash
+    pnpm add -g gwtree
+    yarn global add gwtree
+    bun add -g gwtree
+    ```
+
+    Verify installation:
+
+    ```bash
+    gwt --version
+    ```
+  </Accordion>
+
+  <Accordion title="What are the system requirements?">
+    - **Node.js**: 18.0.0 or higher
+    - **Git**: Any recent version
+    - **Operating System**: Linux, macOS, Windows
+
+    Optional:
+    - VS Code or Cursor (for editor integration)
+    - pnpm/yarn/bun (for dependency management)
+  </Accordion>
+
+  <Accordion title="Where are config files stored?">
+    Configuration is stored in:
+
+    - **Config**: `~/.config/gwtree/config.json`
+    - **Worktree registry**: `~/.gwtree/worktrees.json`
+
+    Open config file:
+    ```bash
+    gwt config
+    ```
+
+    Reset to defaults:
+    ```bash
+    gwt config reset
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Usage
+
+<AccordionGroup>
+  <Accordion title="How do I create a worktree?">
+    Several ways to create worktrees:
+
+    **Interactive mode**:
+    ```bash
+    gwt
+    ```
+
+    **Quick mode** (single name for both worktree and branch):
+    ```bash
+    gwt feature-login
+    ```
+
+    **Fast mode** (skip all prompts):
+    ```bash
+    gwt feature-login -y
+    ```
+
+    **Batch mode** (create multiple at once):
+    ```bash
+    gwt auth api dashboard
+    ```
+
+    **Batch + skip editor**:
+    ```bash
+    gwt a b c -x
+    ```
+  </Accordion>
+
+  <Accordion title="How do I use different names for worktree and branch?">
+    Press **ESC** when prompted for "Worktree & branch name:" to enter separate names.
+
+    Example:
+    1. Run `gwt`
+    2. Press ESC at the name prompt
+    3. Enter worktree name: `login-feature`
+    4. Enter branch name: `feature/user-authentication`
+
+    Result: Creates `repo-login-feature/` directory with `feature/user-authentication` branch.
+  </Accordion>
+
+  <Accordion title="How do I list all worktrees?">
+    ```bash
+    gwt ls
+    ```
+
+    Shows all worktrees for the current repository with their paths and branch names.
+  </Accordion>
+
+  <Accordion title="How do I check worktree status?">
+    ```bash
+    gwt status  # or gwt st
+    ```
+
+    Shows for each worktree:
+    - Uncommitted changes
+    - Commits ahead/behind main
+    - Merge status
+    - Added/deleted lines
+
+    Output example:
+    ```
+    ◆  feature-auth  +45 -12
+    └  ready to merge (3 commits ahead)
+
+    ◆  feature-api  +128 -8
+    └  2 changed, 5 ahead
+
+    ◆  feature-old
+    └  ✓ merged
+    ```
+  </Accordion>
+
+  <Accordion title="How do I remove worktrees?">
+    **Interactive removal**:
+    ```bash
+    gwt rm
+    ```
+
+    **Remove merged worktrees**:
+    ```bash
+    gwt clean
+    ```
+
+    **Remove all worktrees**:
+    ```bash
+    gwt clean --all
+    ```
+  </Accordion>
+
+  <Accordion title="How do I merge a worktree?">
+    The `merge` command automates the entire merge workflow:
+
+    ```bash
+    gwt merge feature-name
+    ```
+
+    This command:
+    1. Switches to main branch
+    2. Merges the feature branch
+    3. Removes the worktree
+    4. Deletes the feature branch
+
+    <Note>
+      The worktree must have no uncommitted changes to merge.
+    </Note>
+  </Accordion>
+</AccordionGroup>
+
+## Configuration
+
+<AccordionGroup>
+  <Accordion title="How do I configure the default editor?">
+    Open config file:
+    ```bash
+    gwt config
+    ```
+
+    Set `editor` to one of:
+    - `"code"` - VS Code (default)
+    - `"cursor"` - Cursor
+    - `"default"` - System default editor ($EDITOR)
+    - `"none"` - Don't open editor
+
+    Or skip editor for a single command:
+    ```bash
+    gwt feature-name -x
+    ```
+  </Accordion>
+
+  <Accordion title="How do I disable automatic dependency installation?">
+    Open config file:
+    ```bash
+    gwt config
+    ```
+
+    Set `installDeps` to `false`:
+    ```json
+    {
+      "editor": "code",
+      "installDeps": false,
+      "lastPm": "pnpm"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="How does GWTree detect package managers?">
+    GWTree detects your package manager by checking for lock files:
+
+    1. `pnpm-lock.yaml` → pnpm
+    2. `bun.lockb` → bun
+    3. `yarn.lock` → yarn
+    4. `package-lock.json` → npm
+    5. `package.json` (no lock file) → pnpm
+
+    The detected package manager is saved in `lastPm` config and used for future worktrees.
+  </Accordion>
+
+  <Accordion title="Can I customize the worktree naming pattern?">
+    The naming pattern is currently fixed as `{repo}-{name}`. For example:
+
+    - Repository: `my-app`
+    - Name: `feature-login`
+    - Worktree directory: `my-app-feature-login`
+
+    To use different names, press ESC during creation and enter separate worktree and branch names.
+  </Accordion>
+</AccordionGroup>
+
+## Workflow
+
+<AccordionGroup>
+  <Accordion title="What's the recommended workflow for multiple AI agents?">
+    **Step 1: Create worktrees**
+    ```bash
+    gwt auth api dashboard -x
+    ```
+
+    **Step 2: Open each worktree in different agents**
+    - Claude Code → `repo-auth/`
+    - Command Code → `repo-api/`
+    - Cursor → `repo-dashboard/`
+
+    **Step 3: Monitor progress**
+    ```bash
+    gwt status
+    ```
+
+    **Step 4: Merge when ready**
+    ```bash
+    gwt merge auth
+    gwt merge api
+    gwt merge dashboard
+    ```
+
+    **Step 5: Cleanup**
+    ```bash
+    gwt clean  # Remove merged worktrees
+    ```
+  </Accordion>
+
+  <Accordion title="How do I handle uncommitted changes?">
+    When creating a worktree, GWTree detects uncommitted changes and offers options:
+
+    1. **Stash changes**: Saves changes with `git stash` (recommended)
+    2. **Ignore and continue**: Leaves changes in current worktree
+    3. **Cancel**: Aborts worktree creation
+
+    To skip prompts:
+    ```bash
+    gwt feature-name -y  # Auto-stashes if needed
+    ```
+  </Accordion>
+
+  <Accordion title="Do I need to be on the main branch?">
+    No. GWTree handles branch switching automatically:
+
+    - If you're not on main/master, it prompts to switch
+    - In fast mode (`-y`), it switches automatically
+    - Worktrees are always created from the main branch
+  </Accordion>
+
+  <Accordion title="What happens to dependencies?">
+    If `installDeps` is enabled (default), GWTree:
+
+    1. Detects package manager in the new worktree
+    2. Runs install command (`pnpm install`, `npm install`, etc.)
+    3. Shows install status in the output
+
+    Dependencies are installed independently in each worktree, so different worktrees can have different versions.
+  </Accordion>
+
+  <Accordion title="Can I use worktrees without GWTree?">
+    Yes! GWTree creates standard git worktrees. You can always use native git commands:
+
+    ```bash
+    git worktree list
+    git worktree remove path/to/worktree
+    git worktree prune
+    ```
+
+    GWTree is a convenience wrapper that makes worktree management easier.
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="What if I manually delete a worktree directory?">
+    If you delete a worktree directory manually, git keeps a stale reference.
+
+    **Solution:**
+    ```bash
+    git worktree prune
+    ```
+
+    GWTree runs this automatically when creating worktrees.
+  </Accordion>
+
+  <Accordion title="Why isn't my worktree showing in gwt ls?">
+    `gwt ls` shows only worktrees created by GWTree. It reads from `~/.gwtree/worktrees.json`.
+
+    To see all worktrees (including manually created ones):
+    ```bash
+    git worktree list
+    ```
+  </Accordion>
+
+  <Accordion title="How do I recover stashed changes?">
+    If you chose "Stash changes" when creating a worktree:
+
+    1. Navigate to the original worktree (usually main repo)
+    2. Apply the stash:
+       ```bash
+       git stash pop
+       ```
+
+    List all stashes:
+    ```bash
+    git stash list
+    ```
+  </Accordion>
+</AccordionGroup>

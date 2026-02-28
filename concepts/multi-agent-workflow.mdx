@@ -1,0 +1,354 @@
+---
+title: Multi-Agent Workflow
+description: Run Claude Code, Command Code, and Cursor AI agents in parallel on separate branches
+---
+
+## The Multi-Agent Development Era
+
+GWTree is built for the AI-assisted development era where multiple AI coding agents can work on different features simultaneously. Git worktrees are the perfect solution for parallel agent execution.
+
+## Why Worktrees for AI Agents?
+
+AI coding agents like Claude Code, Command Code, and Cursor need:
+
+<CardGroup cols={2}>
+  <Card title="Isolated Environments" icon="shield">
+    Each agent needs its own working directory to avoid conflicts with file modifications
+  </Card>
+  
+  <Card title="Separate Branches" icon="code-branch">
+    Clean separation of changes allows independent code review and merging
+  </Card>
+  
+  <Card title="Parallel Execution" icon="gauge-high">
+    Work on multiple features simultaneously instead of waiting for sequential completion
+  </Card>
+  
+  <Card title="Easy Merging" icon="code-merge">
+    Review each agent's work independently and merge when ready
+  </Card>
+</CardGroup>
+
+## Quick Start: Parallel Agent Setup
+
+Create three worktrees instantly for three different features:
+
+```bash
+gwt auth api dashboard -x
+```
+
+<Info>
+The `-x` flag (`--no-editor`) prevents editors from automatically opening, perfect for batch creation.
+</Info>
+
+This creates:
+```
+parent-directory/
+├── my-repo/              # Main repository
+├── my-repo-auth/         # For authentication work
+├── my-repo-api/          # For API endpoints
+└── my-repo-dashboard/    # For UI components
+```
+
+Each with its own branch: `auth`, `api`, `dashboard`
+
+## Multi-Agent Workflow
+
+<Steps>
+  <Step title="Create isolated worktrees">
+    Use batch creation to set up multiple worktrees at once:
+    
+    ```bash
+    gwt auth api dashboard -x
+    ```
+    
+    From the source code (src/commands/create.ts:326-458), the batch creation function:
+    - Prunes stale worktrees once at the start
+    - Creates each worktree from the main branch
+    - Auto-installs dependencies if configured
+    - Handles branch name conflicts automatically
+  </Step>
+  
+  <Step title="Assign agents to worktrees">
+    Open each worktree in a different AI coding tool:
+    
+    ```bash
+    # Terminal 1: Claude Code
+    cd my-repo-auth
+    # Start Claude Code session for authentication
+    
+    # Terminal 2: Command Code
+    cd my-repo-api
+    # Start Command Code session for API
+    
+    # Terminal 3: Cursor
+    cd my-repo-dashboard
+    cursor .
+    ```
+  </Step>
+  
+  <Step title="Work in parallel">
+    Each agent works independently:
+    - **Claude Code** implements OAuth2 authentication in `my-repo-auth/`
+    - **Command Code** builds REST API endpoints in `my-repo-api/`
+    - **Cursor** creates dashboard components in `my-repo-dashboard/`
+    
+    No conflicts, no stashing, no branch switching needed.
+  </Step>
+  
+  <Step title="Monitor progress">
+    Check the status of all worktrees:
+    
+    ```bash
+    gwt status
+    ```
+    
+    Output shows:
+    ```
+    ◆  auth  +150 -20
+    └  3 commits ahead, ready to merge
+    
+    ◆  api  +280 -15
+    └  2 changed, 5 ahead
+    
+    ◆  dashboard  +420 -35
+    └  1 changed, 4 ahead
+    ```
+  </Step>
+  
+  <Step title="Merge when ready">
+    Merge completed work independently:
+    
+    ```bash
+    # Auth is done first
+    gwt merge auth
+    
+    # API finishes next
+    gwt merge api
+    
+    # Dashboard completes last
+    gwt merge dashboard
+    ```
+    
+    Each merge:
+    - Switches to main branch
+    - Merges the feature branch
+    - Removes the worktree
+    - Deletes the branch
+  </Step>
+</Steps>
+
+## Real-World Example
+
+### Scenario: E-commerce Feature Sprint
+
+You need to ship three features simultaneously:
+1. Payment integration
+2. Product search
+3. User reviews
+
+### Traditional Approach (Sequential)
+
+```bash
+# Day 1-2: Payment integration
+git checkout -b payment-integration
+# Work with AI agent...
+git commit -m "Add payment integration"
+
+# Day 3-4: Product search
+git checkout main
+git checkout -b product-search
+# Work with AI agent...
+git commit -m "Add product search"
+
+# Day 5-6: User reviews
+git checkout main
+git checkout -b user-reviews
+# Work with AI agent...
+```
+
+**Time to complete: 6 days**
+
+### GWTree Approach (Parallel)
+
+```bash
+# Day 1 morning: Setup all three
+gwt payment-integration product-search user-reviews -x
+
+# Day 1-2: Run three AI agents simultaneously
+# Claude Code → my-repo-payment-integration/
+# Command Code → my-repo-product-search/
+# Cursor → my-repo-user-reviews/
+
+# Day 2: All features complete in parallel
+gwt merge payment-integration
+gwt merge product-search
+gwt merge user-reviews
+```
+
+**Time to complete: 2 days**
+
+## Automatic Dependency Management
+
+GWTree automatically installs dependencies in each worktree:
+
+```typescript
+// From src/commands/create.ts:399-410
+const detectedPm = detectPackageManager(worktreePath);
+const pm = detectedPm || savedConfig.lastPm;
+if (pm && savedConfig.installDeps) {
+  const installCmd = getInstallCommand(pm);
+  try {
+    execSync(installCmd, { cwd: worktreePath, stdio: 'pipe' });
+    logStep('Install', `${installCmd} (${worktreeName})`, 'dependencies installed');
+  } catch {
+    // ignore install errors in batch
+  }
+}
+```
+
+Supported package managers:
+- pnpm (detected via `pnpm-lock.yaml`)
+- Bun (detected via `bun.lockb`)
+- Yarn (detected via `yarn.lock`)
+- npm (detected via `package-lock.json`)
+
+## Editor Integration
+
+Open each worktree in your preferred editor automatically:
+
+```bash
+# Configure default editor
+gwt config
+# Select: code, cursor, or default
+
+# Create worktrees and auto-open
+gwt auth api dashboard
+# Opens 3 VS Code/Cursor windows automatically
+```
+
+To disable auto-opening when creating multiple worktrees:
+
+```bash
+gwt auth api dashboard -x
+```
+
+## Status Monitoring
+
+The status dashboard provides real-time visibility into all agent progress:
+
+```bash
+gwt status
+```
+
+### Status Indicators
+
+<Accordion title="Ready to merge">
+  ```
+  ◆  auth  +150 -20
+  └  ready to merge (3 commits ahead)
+  ```
+  
+  No uncommitted changes, commits are ready to merge to main.
+</Accordion>
+
+<Accordion title="In progress">
+  ```
+  ◆  api  +280 -15
+  └  2 changed, 5 ahead, 1 behind
+  ```
+  
+  Active work with uncommitted changes or behind main.
+</Accordion>
+
+<Accordion title="Merged">
+  ```
+  ◆  dashboard  +0 -0
+  └  ✓ merged
+  ```
+  
+  Already merged to main, ready for cleanup with `gwt clean`.
+</Accordion>
+
+## Cleanup Merged Work
+
+After merging, clean up worktrees:
+
+```bash
+# Remove only merged worktrees
+gwt clean
+
+# Remove all worktrees
+gwt clean --all
+```
+
+From src/commands/list.ts:375-378, the clean command detects merged worktrees:
+
+```typescript
+const toRemove = removeAll
+  ? worktrees
+  : worktrees.filter(wt => {
+      const status = getWorktreeStatus(wt.path, gitRoot, mainBranch);
+      return status.isMerged;
+    });
+```
+
+## Best Practices
+
+<Tip>
+**Do:**
+- Use descriptive, feature-based names: `user-auth`, `payment-flow`, `admin-panel`
+- Run `gwt status` regularly to monitor all agents
+- Merge completed worktrees promptly to avoid drift from main
+- Use `gwt clean` to remove merged worktrees
+</Tip>
+
+<Warning>
+**Don't:**
+- Create too many worktrees (3-5 is ideal)
+- Let worktrees get too far behind main (merge or rebase regularly)
+- Forget to clean up merged worktrees (wastes disk space)
+- Use the same worktree for multiple agents (defeats isolation purpose)
+</Warning>
+
+## Advanced: Custom Workflows
+
+### Feature Branch from Non-Main
+
+Press ESC during name input to specify different branch and worktree names:
+
+```bash
+gwt
+# Enter worktree name: hotfix-auth
+# Press ESC
+# Worktree name: hotfix-auth
+# Branch name: fix/auth-bug-123
+```
+
+This creates `my-repo-hotfix-auth/` with branch `fix/auth-bug-123`.
+
+### Fast Mode for Automation
+
+Skip all prompts with `-y` flag:
+
+```bash
+gwt feature-x -y
+```
+
+Uses saved defaults:
+- Auto-stash changes
+- Auto-switch to main
+- Auto-pull latest
+- Auto-install dependencies
+
+## Learn More
+
+<CardGroup cols={2}>
+  <Card title="Naming Patterns" icon="tag" href="/concepts/naming-patterns">
+    Understand the `{repo}-{name}` naming convention
+  </Card>
+  
+  <Card title="Git Worktrees" icon="code-branch" href="/concepts/worktrees">
+    Deep dive into how git worktrees work
+  </Card>
+</CardGroup>

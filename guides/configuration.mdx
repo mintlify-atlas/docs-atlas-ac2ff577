@@ -1,0 +1,552 @@
+---
+title: Configuration
+description: Configure GWTree behavior with editor, dependency installation, and package manager settings
+---
+
+GWTree stores configuration in a JSON file that controls automatic behaviors when creating worktrees.
+
+## Configuration File
+
+GWTree uses a global configuration file stored at:
+
+```
+~/.config/configstore/gwtree.json
+```
+
+### Open Configuration
+
+Open the config file in your editor:
+
+```bash
+gwt config
+```
+
+This opens the file in your configured editor.
+
+### View Configuration Path
+
+If you have `editor` set to `none`:
+
+```bash
+gwt config
+# Outputs: /Users/username/.config/configstore/gwtree.json
+```
+
+### Reset Configuration
+
+Reset all settings to defaults:
+
+```bash
+gwt config reset
+```
+
+Output:
+```
+Config reset to defaults
+```
+
+## Configuration Schema
+
+The config file contains three main settings:
+
+```json
+{
+  "editor": "code",
+  "installDeps": true,
+  "lastPm": "pnpm"
+}
+```
+
+### editor
+
+Controls which editor opens after creating a worktree.
+
+**Type**: `string`  
+**Options**: `"code"`, `"cursor"`, `"default"`, `"none"`  
+**Default**: `"code"`
+
+#### Options
+
+<Tabs>
+  <Tab title="code">
+    Opens worktrees in Visual Studio Code.
+
+    ```json
+    {
+      "editor": "code"
+    }
+    ```
+
+    Runs:
+    ```bash
+    code "/path/to/worktree"
+    ```
+
+    **Requirements**:
+    - VS Code installed
+    - `code` command in PATH
+
+    **Behavior**:
+    - Opens each worktree in a new window
+    - Batch creation opens multiple windows
+  </Tab>
+
+  <Tab title="cursor">
+    Opens worktrees in Cursor editor.
+
+    ```json
+    {
+      "editor": "cursor"
+    }
+    ```
+
+    Runs:
+    ```bash
+    cursor "/path/to/worktree"
+    ```
+
+    **Requirements**:
+    - Cursor installed
+    - `cursor` command in PATH
+
+    **Behavior**:
+    - Opens each worktree in a new window
+    - Batch creation opens multiple windows
+  </Tab>
+
+  <Tab title="default">
+    Uses the system default editor from `$EDITOR` environment variable.
+
+    ```json
+    {
+      "editor": "default"
+    }
+    ```
+
+    Runs:
+    ```bash
+    $EDITOR "/path/to/worktree"
+    ```
+
+    Falls back to `vim` if `$EDITOR` is not set.
+
+    **Use cases**:
+    - Remote development via SSH
+    - Terminal-based editors (vim, emacs, nano)
+    - Custom editor setups
+  </Tab>
+
+  <Tab title="none">
+    Disables automatic editor opening.
+
+    ```json
+    {
+      "editor": "none"
+    }
+    ```
+
+    **Use cases**:
+    - Manual editor control
+    - Scripting and automation
+    - Batch creation without opening editors
+    - Resource-constrained environments
+  </Tab>
+</Tabs>
+
+#### Skip Editor with Flag
+
+Temporarily skip editor opening without changing config:
+
+```bash
+gwt feature-name -x
+# or
+gwt feature-name --no-editor
+```
+
+### installDeps
+
+Controls whether dependencies are automatically installed after creating a worktree.
+
+**Type**: `boolean`  
+**Default**: `true`
+
+#### Enable Dependency Installation
+
+```json
+{
+  "installDeps": true
+}
+```
+
+When enabled:
+- Detects package manager from lockfiles
+- Runs install command automatically
+- Uses `lastPm` as fallback if no lockfile found
+
+#### Disable Dependency Installation
+
+```json
+{
+  "installDeps": false
+}
+```
+
+When disabled:
+- Skips installation step entirely
+- Faster worktree creation
+- Manual installation required
+
+#### Package Manager Detection
+
+GWTree detects the package manager in this order:
+
+1. **pnpm**: If `pnpm-lock.yaml` exists
+2. **bun**: If `bun.lockb` exists
+3. **yarn**: If `yarn.lock` exists
+4. **npm**: If `package-lock.json` exists
+5. **pnpm** (default): If only `package.json` exists
+6. **lastPm**: If no lockfiles found
+
+#### Install Commands
+
+| Package Manager | Command |
+|----------------|----------|
+| pnpm | `pnpm install` |
+| npm | `npm install` |
+| yarn | `yarn install` |
+| bun | `bun install` |
+
+### lastPm
+
+Tracks the last package manager used successfully.
+
+**Type**: `string | null`  
+**Options**: `"pnpm"`, `"npm"`, `"yarn"`, `"bun"`, `null`  
+**Default**: `null`
+
+#### Automatic Updates
+
+This field is automatically updated by GWTree:
+
+```json
+{
+  "lastPm": "pnpm"
+}
+```
+
+When a worktree is created:
+1. GWTree detects the package manager
+2. Runs the install command
+3. Updates `lastPm` to the detected package manager
+
+#### Fallback Behavior
+
+When no lockfile is found:
+- If `lastPm` is set: Uses that package manager
+- If `lastPm` is `null`: No installation occurs
+
+This allows GWTree to remember your preference across worktrees.
+
+#### Manual Configuration
+
+You can manually set a preferred package manager:
+
+```json
+{
+  "lastPm": "bun"
+}
+```
+
+This ensures bun is used when no lockfile is detected.
+
+## Configuration Examples
+
+### VS Code + Always Install
+
+```json
+{
+  "editor": "code",
+  "installDeps": true,
+  "lastPm": "pnpm"
+}
+```
+
+Behavior:
+- Opens worktrees in VS Code
+- Installs dependencies automatically
+- Prefers pnpm when no lockfile
+
+### Cursor + Skip Install
+
+```json
+{
+  "editor": "cursor",
+  "installDeps": false,
+  "lastPm": null
+}
+```
+
+Behavior:
+- Opens worktrees in Cursor
+- Skips dependency installation
+- No package manager fallback
+
+### Terminal Vim + NPM
+
+```json
+{
+  "editor": "default",
+  "installDeps": true,
+  "lastPm": "npm"
+}
+```
+
+Behavior:
+- Opens worktrees in $EDITOR (vim)
+- Installs dependencies with npm
+- Uses npm when no lockfile
+
+### No Editor + Manual Install
+
+```json
+{
+  "editor": "none",
+  "installDeps": false,
+  "lastPm": null
+}
+```
+
+Behavior:
+- No automatic editor opening
+- No automatic dependency installation
+- Maximum control, minimum automation
+
+### Fast Mode (CI/Scripting)
+
+```json
+{
+  "editor": "none",
+  "installDeps": false,
+  "lastPm": "pnpm"
+}
+```
+
+Behavior:
+- No editor opening
+- No dependency installation
+- Fast worktree creation for scripts
+
+## Configuration Workflow
+
+### Initial Setup
+
+<Steps>
+
+### Step 1: Create First Worktree
+
+On first use, GWTree creates the config with defaults:
+
+```bash
+gwt feature-name
+```
+
+### Step 2: Adjust Settings
+
+Open and modify the config:
+
+```bash
+gwt config
+```
+
+Edit the JSON:
+```json
+{
+  "editor": "cursor",
+  "installDeps": true,
+  "lastPm": "pnpm"
+}
+```
+
+### Step 3: Test Configuration
+
+Create another worktree to test settings:
+
+```bash
+gwt test-config -y
+```
+
+### Step 4: Fine-tune
+
+Adjust based on your workflow:
+- Disable `installDeps` for faster creation
+- Change `editor` to match your preference
+- Set `lastPm` to your preferred package manager
+
+</Steps>
+
+### Common Adjustments
+
+#### Switch to Cursor
+
+```bash
+gwt config
+# Change: "editor": "code" → "editor": "cursor"
+```
+
+#### Disable Auto-install for Speed
+
+```bash
+gwt config
+# Change: "installDeps": true → "installDeps": false
+```
+
+#### Prefer Bun
+
+```bash
+gwt config
+# Change: "lastPm": "pnpm" → "lastPm": "bun"
+```
+
+## Advanced Configuration
+
+### Per-Command Overrides
+
+Config settings can be overridden per command:
+
+```bash
+# Skip editor even if config has editor set
+gwt feature-name -x
+
+# Use defaults even if installDeps is false
+gwt feature-name -y
+```
+
+### Team Configuration
+
+For teams, you can share config via documentation:
+
+```json
+// Recommended team config
+{
+  "editor": "code",
+  "installDeps": true,
+  "lastPm": "pnpm"
+}
+```
+
+Each developer runs:
+```bash
+gwt config
+# Paste team config
+```
+
+### Environment-Specific Config
+
+#### Development Machine
+
+```json
+{
+  "editor": "code",
+  "installDeps": true,
+  "lastPm": "pnpm"
+}
+```
+
+#### Remote SSH Session
+
+```json
+{
+  "editor": "default",  // Uses vim
+  "installDeps": false, // Slow over SSH
+  "lastPm": null
+}
+```
+
+#### CI/CD Pipeline
+
+```json
+{
+  "editor": "none",
+  "installDeps": false,
+  "lastPm": "npm"
+}
+```
+
+## Troubleshooting
+
+### Editor Not Opening
+
+**Problem**: Editor configured but doesn't open
+
+**Solutions**:
+1. Verify editor is installed
+2. Check editor command is in PATH:
+   ```bash
+   which code
+   which cursor
+   ```
+3. Try running command manually:
+   ```bash
+   code /path/to/test
+   ```
+4. Check config file:
+   ```bash
+   gwt config
+   ```
+
+### Dependencies Not Installing
+
+**Problem**: `installDeps` is true but nothing installs
+
+**Solutions**:
+1. Check `installDeps` setting:
+   ```bash
+   gwt config
+   ```
+2. Verify lockfile exists in repo
+3. Set `lastPm` to preferred package manager
+4. Check package manager is installed:
+   ```bash
+   which pnpm
+   which npm
+   ```
+
+### Wrong Package Manager
+
+**Problem**: Using npm but want pnpm
+
+**Solutions**:
+1. Delete lockfiles from other package managers
+2. Set `lastPm` to preferred:
+   ```json
+   { "lastPm": "pnpm" }
+   ```
+3. Ensure lockfile exists:
+   ```bash
+   # Create pnpm lockfile
+   pnpm install
+   ```
+
+### Config Changes Not Applied
+
+**Problem**: Edited config but behavior unchanged
+
+**Solutions**:
+1. Verify JSON syntax is valid
+2. Check no trailing commas
+3. Restart terminal/shell
+4. View config path:
+   ```bash
+   gwt config  # Should show path
+   ```
+5. Reset and reconfigure:
+   ```bash
+   gwt config reset
+   gwt config
+   ```
+
+## Next Steps
+
+- Apply your config by [creating worktrees](/guides/creating-worktrees)
+- Learn about [batch creation](/guides/batch-creation) which respects config settings
+- Explore [managing worktrees](/guides/managing-worktrees) to track your work

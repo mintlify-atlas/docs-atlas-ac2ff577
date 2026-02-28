@@ -1,0 +1,449 @@
+---
+title: Naming Patterns
+description: Understanding the {repo}-{name} naming convention and how GWTree structures worktrees
+---
+
+## The `{repo}-{name}` Pattern
+
+GWTree follows a consistent naming pattern for all worktrees:
+
+```
+{repository-name}-{worktree-name}
+```
+
+This pattern ensures:
+- **Predictability**: Always know where to find worktrees
+- **Organization**: Related worktrees are grouped alphabetically
+- **Clarity**: The repository origin is immediately visible
+- **Uniqueness**: Avoid conflicts with existing directories
+
+## Pattern Implementation
+
+From the source code (src/commands/create.ts:47, 224):
+
+```typescript
+const repoName = basename(gitRoot);
+// ...
+const worktreeName = `${repoName}-${worktreeSuffix}`;
+const worktreePath = join(parentDir, worktreeName);
+```
+
+GWTree automatically:
+1. Detects the repository name from the git root directory
+2. Combines it with your chosen worktree name
+3. Creates the directory in the parent folder
+
+## Directory Structure
+
+### Single Repository Example
+
+```bash
+~/projects/
+├── my-app/                 # Original repository
+├── my-app-feature-auth/    # Authentication feature
+├── my-app-bugfix-login/    # Login bug fix
+└── my-app-refactor-api/    # API refactoring
+```
+
+### Multi-Repository Example
+
+```bash
+~/projects/
+├── frontend/
+├── frontend-dashboard/
+├── frontend-mobile/
+├── backend/
+├── backend-api/
+└── backend-workers/
+```
+
+Worktrees for different repos naturally group together.
+
+## Naming Examples
+
+### Quick Creation
+
+When you provide a name directly, it's used for both the worktree and branch:
+
+```bash
+gwt feature-auth
+```
+
+Creates:
+- **Directory**: `my-repo-feature-auth/`
+- **Branch**: `feature-auth`
+
+### Interactive Creation
+
+During interactive mode:
+
+```bash
+gwt
+# Prompt shows: ~/projects/my-repo-<name>
+# You enter: dashboard-redesign
+```
+
+Creates:
+- **Directory**: `my-repo-dashboard-redesign/`
+- **Branch**: `dashboard-redesign`
+
+### Separate Names (Advanced)
+
+Press ESC during name input to specify different worktree and branch names:
+
+```bash
+gwt
+# Press ESC
+# Worktree name: ui-v2
+# Branch name: feature/dashboard-redesign
+```
+
+Creates:
+- **Directory**: `my-repo-ui-v2/`
+- **Branch**: `feature/dashboard-redesign`
+
+From src/commands/create.ts:181-221:
+
+```typescript
+if (p.isCancel(nameInput)) {
+  // ESC pressed - ask for worktree and branch names separately
+  const worktreeInput = await p.text({
+    message: 'Worktree name:',
+    placeholder: 'feature-name',
+  });
+  // ...
+  worktreeSuffix = worktreeInput as string;
+  
+  const branchInput = await p.text({
+    message: 'Branch name:',
+    placeholder: worktreeSuffix,
+    defaultValue: worktreeSuffix,
+  });
+  // ...
+  branchName = branchInput as string;
+}
+```
+
+## Valid Name Characters
+
+GWTree validates names to ensure compatibility with both filesystems and git:
+
+```typescript
+// From src/commands/create.ts:176-178
+validate: (value) => {
+  if (!value) return 'Name is required';
+  if (!/^[a-zA-Z0-9._/-]+$/.test(value)) return 'Invalid name';
+}
+```
+
+### Allowed Characters
+
+<ParamField body="Valid" type="string">
+  - Letters: `a-z`, `A-Z`
+  - Numbers: `0-9`
+  - Special: `.` (dot), `_` (underscore), `/` (slash), `-` (hyphen)
+</ParamField>
+
+<Warning>
+**Invalid characters:**
+- Spaces: ` ` (use `-` or `_` instead)
+- Special symbols: `@`, `#`, `$`, `%`, `&`, `*`, etc.
+</Warning>
+
+## Naming Conventions
+
+### Feature Development
+
+```bash
+gwt feature-user-auth      # my-repo-feature-user-auth/
+gwt feature-payment        # my-repo-feature-payment/
+gwt feat/dark-mode         # my-repo-feat/dark-mode/
+```
+
+### Bug Fixes
+
+```bash
+gwt bugfix-login           # my-repo-bugfix-login/
+gwt fix/cors-issue         # my-repo-fix/cors-issue/
+gwt hotfix-security        # my-repo-hotfix-security/
+```
+
+### Experiments
+
+```bash
+gwt exp-new-framework      # my-repo-exp-new-framework/
+gwt poc-ai-integration     # my-repo-poc-ai-integration/
+gwt test-performance       # my-repo-test-performance/
+```
+
+### Agent-Based Work
+
+```bash
+gwt auth api dashboard     # Multi-agent parallel work
+# Creates:
+# - my-repo-auth/
+# - my-repo-api/
+# - my-repo-dashboard/
+```
+
+## Branch Name Conflicts
+
+GWTree automatically handles branch name conflicts by appending a counter:
+
+```typescript
+// From src/commands/create.ts:234-237
+let newBranchForWorktree = branchName;
+let counter = 1;
+while (branches.includes(newBranchForWorktree)) {
+  newBranchForWorktree = `${branchName}-${counter}`;
+  counter++;
+}
+```
+
+### Example
+
+If branch `feature` already exists:
+
+```bash
+gwt feature
+# Creates: my-repo-feature/ with branch feature-1
+
+gwt feature
+# Creates: my-repo-feature-2/ with branch feature-2
+```
+
+For batch creation:
+
+```bash
+gwt test test test
+# Creates:
+# - my-repo-test/ (branch: test)
+# - my-repo-test-2/ (branch: test-1)  
+# - my-repo-test-3/ (branch: test-2)
+```
+
+From src/commands/create.ts:376-381:
+
+```typescript
+let branchName = name;
+let counter = 1;
+while (branches.includes(branchName)) {
+  branchName = `${name}-${counter}`;
+  counter++;
+}
+branches.push(branchName); // Track for next iteration
+```
+
+## Directory Path Preview
+
+GWTree shows the full path before creation:
+
+```bash
+gwt
+# Shows: /Users/dev/projects/my-repo-<name>
+```
+
+From src/commands/create.ts:169:
+
+```typescript
+p.log.info(`${chalk.dim(parentDir + '/')}${repoName}-${chalk.green('<name>')}`);
+```
+
+This helps you:
+- Verify the parent directory location
+- Understand the naming pattern
+- Catch potential path issues early
+
+## Batch Creation Naming
+
+Create multiple worktrees with custom names:
+
+```bash
+gwt auth api dashboard admin
+```
+
+Creates:
+```
+my-repo-auth/
+my-repo-api/
+my-repo-dashboard/
+my-repo-admin/
+```
+
+Each worktree:
+- Has its own branch with the same name
+- Lives in the parent directory
+- Follows the `{repo}-{name}` pattern
+- Gets dependencies installed automatically (if configured)
+
+## Edge Cases
+
+### Directory Already Exists
+
+If the worktree directory already exists:
+
+```typescript
+// From src/commands/create.ts:227-230
+if (existsSync(worktreePath)) {
+  p.cancel(`Directory already exists: ${worktreePath}`);
+  process.exit(1);
+}
+```
+
+**Solution**: Choose a different name or remove the existing directory.
+
+### Long Repository Names
+
+For repos with long names like `my-super-long-repository-name`:
+
+```bash
+# Creates: my-super-long-repository-name-feature-auth/
+gwt feature-auth
+```
+
+**Tip**: Keep worktree names short to compensate for long repo names.
+
+### Special Characters in Repo Name
+
+Repository names with special characters are preserved:
+
+```bash
+# Repo: my-app.io
+# Creates: my-app.io-feature-auth/
+gwt feature-auth
+```
+
+## Finding Worktrees
+
+### List Command
+
+View all worktrees for the current repository:
+
+```bash
+gwt ls
+```
+
+Output:
+```
+◆  feature-auth
+└  /Users/dev/projects/my-repo-feature-auth
+
+◆  api-refactor
+└  /Users/dev/projects/my-repo-api-refactor
+```
+
+### Remove by Name
+
+The remove command searches by worktree name:
+
+```bash
+gwt rm
+# Search: auth
+# Shows: feature-auth my-repo-feature-auth
+```
+
+From src/commands/list.ts:168-172:
+
+```typescript
+const choices = worktrees.map(wt => ({
+  value: wt.path,
+  name: `${wt.branch} ${chalk.dim(basename(wt.path))}`,
+  description: wt.path
+}));
+```
+
+### Merge by Name
+
+Merge using any of these identifiers:
+
+```bash
+# By branch name
+gwt merge feature-auth
+
+# By worktree name
+gwt merge my-repo-feature-auth
+
+# By suffix only
+gwt merge auth
+```
+
+From src/commands/list.ts:467-471:
+
+```typescript
+const wt = worktrees.find(w =>
+  w.branch === name ||
+  basename(w.path) === name ||
+  basename(w.path) === `${repoName}-${name}`
+);
+```
+
+## Best Practices
+
+<Tip>
+**Recommended naming:**
+- Use descriptive, lowercase names: `user-dashboard`, `payment-flow`
+- Include context: `fix-login-bug`, `refactor-api-layer`
+- Keep it short: `auth` instead of `authentication-and-authorization`
+- Use hyphens for readability: `api-v2` not `apiv2`
+</Tip>
+
+<Warning>
+**Avoid:**
+- Generic names: `test`, `temp`, `new`
+- Version numbers alone: `v1`, `v2`
+- Ambiguous abbreviations: `stuff`, `things`, `misc`
+- Special characters: `feat@1`, `fix#123`
+</Warning>
+
+## Pattern Benefits
+
+### Consistency Across Projects
+
+The same pattern works for any repository:
+
+```bash
+# Frontend project
+cd ~/projects/frontend
+gwt dashboard
+# Creates: frontend-dashboard/
+
+# Backend project
+cd ~/projects/backend-api
+gwt webhooks
+# Creates: backend-api-webhooks/
+```
+
+### Easy Navigation
+
+Tab completion works naturally:
+
+```bash
+cd ~/projects/my-<TAB>
+# Autocompletes all: my-repo, my-repo-auth, my-repo-api
+```
+
+### Clean Organization
+
+Alphabetical sorting groups related worktrees:
+
+```bash
+ls ~/projects/
+# backend/
+# backend-api/
+# backend-workers/
+# frontend/
+# frontend-admin/
+# frontend-mobile/
+```
+
+## Learn More
+
+<CardGroup cols={2}>
+  <Card title="Git Worktrees" icon="code-branch" href="/concepts/worktrees">
+    Learn about git worktrees fundamentals
+  </Card>
+  
+  <Card title="Multi-Agent Workflow" icon="users" href="/concepts/multi-agent-workflow">
+    See how naming patterns enable parallel development
+  </Card>
+</CardGroup>

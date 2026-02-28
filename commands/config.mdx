@@ -1,0 +1,426 @@
+---
+title: gwt config
+description: Manage GWTree configuration and preferences
+---
+
+## Syntax
+
+```bash
+gwt config [action]
+```
+
+## Description
+
+Manages GWTree's configuration file. With no arguments, opens the config file in your configured editor. Use `reset` action to restore default settings.
+
+## Arguments
+
+<ParamField path="action" type="string" optional>
+  Action to perform. Supported values:
+  - Omit to open config file in editor
+  - `reset` - Reset configuration to defaults
+</ParamField>
+
+## Configuration File
+
+GWTree stores configuration in a JSON file managed by the [conf](https://github.com/sindresorhus/conf) package.
+
+**Location:**
+- macOS: `~/Library/Preferences/gwtree-nodejs/config.json`
+- Linux: `~/.config/gwtree-nodejs/config.json`
+- Windows: `%APPDATA%\gwtree-nodejs\Config\config.json`
+
+## Configuration Options
+
+### editor
+
+<ParamField path="editor" type="string" default="code">
+  Which editor to open after creating a worktree.
+  
+  **Options:**
+  - `code` - Visual Studio Code
+  - `cursor` - Cursor editor
+  - `default` - Use `$EDITOR` environment variable
+  - `none` - Don't open any editor
+</ParamField>
+
+### installDeps
+
+<ParamField path="installDeps" type="boolean" default={true}>
+  Whether to automatically install dependencies when creating worktrees.
+  
+  When `true`, runs the appropriate package manager install command:
+  - `pnpm install`
+  - `npm install`
+  - `yarn install`
+  - `bun install`
+</ParamField>
+
+### lastPm
+
+<ParamField path="lastPm" type="string" default={null}>
+  Last detected package manager. Auto-updated by GWTree.
+  
+  **Options:**
+  - `pnpm`
+  - `npm`
+  - `yarn`
+  - `bun`
+  - `null` - Not yet detected
+  
+  This is automatically set when creating worktrees based on lock files detected.
+</ParamField>
+
+## Examples
+
+### Open config file
+
+```bash
+gwt config
+```
+
+Opens the config file in your configured editor (defaults to VS Code).
+
+### Reset to defaults
+
+```bash
+gwt config reset
+```
+
+**Output:**
+```
+Config reset to defaults
+```
+
+### Get config location
+
+If editor is set to `none`:
+
+```bash
+gwt config
+```
+
+**Output:**
+```
+/Users/john/Library/Preferences/gwtree-nodejs/config.json
+```
+
+## Config File Structure
+
+**Default config:**
+```json
+{
+  "editor": "code",
+  "installDeps": true,
+  "lastPm": null
+}
+```
+
+**Customized config:**
+```json
+{
+  "editor": "cursor",
+  "installDeps": false,
+  "lastPm": "pnpm"
+}
+```
+
+## Editing Configuration
+
+### Using gwt config
+
+```bash
+gwt config
+```
+
+This opens the file in your editor. Make changes and save.
+
+### Manual editing
+
+```bash
+# macOS/Linux
+code ~/.config/gwtree-nodejs/config.json
+
+# Or find the path first
+gwt config  # Shows path if editor is 'none'
+```
+
+### Example edits
+
+**Disable dependency installation:**
+```json
+{
+  "editor": "code",
+  "installDeps": false,
+  "lastPm": "pnpm"
+}
+```
+
+**Use Cursor editor:**
+```json
+{
+  "editor": "cursor",
+  "installDeps": true,
+  "lastPm": "bun"
+}
+```
+
+**Use system default editor:**
+```json
+{
+  "editor": "default",
+  "installDeps": true,
+  "lastPm": "npm"
+}
+```
+
+**Disable editor opening:**
+```json
+{
+  "editor": "none",
+  "installDeps": true,
+  "lastPm": "yarn"
+}
+```
+
+## Editor Behavior
+
+### Visual Studio Code (`code`)
+
+```bash
+code "/path/to/worktree"
+```
+
+Opens worktree in new VS Code window.
+
+### Cursor (`cursor`)
+
+```bash
+cursor "/path/to/worktree"
+```
+
+Opens worktree in Cursor editor.
+
+### Default (`default`)
+
+Uses `$EDITOR` environment variable:
+
+```bash
+$EDITOR "/path/to/worktree"
+```
+
+Common values:
+- `vim`
+- `nvim`
+- `emacs`
+- `nano`
+
+Set in your shell config:
+```bash
+export EDITOR=nvim
+```
+
+### None (`none`)
+
+Skips opening any editor. Useful for:
+- CI/CD environments
+- Scripts
+- Terminal-only workflows
+
+## Dependency Installation
+
+When `installDeps` is `true`, GWTree:
+
+1. **Detects package manager** from lock files:
+   - `pnpm-lock.yaml` → `pnpm`
+   - `bun.lockb` → `bun`
+   - `yarn.lock` → `yarn`
+   - `package-lock.json` → `npm`
+   - Only `package.json` → `pnpm` (default)
+
+2. **Runs install command**:
+   ```bash
+   pnpm install  # or npm/yarn/bun
+   ```
+
+3. **Updates `lastPm`** config for next time
+
+### Disable for faster creation
+
+```json
+{
+  "installDeps": false
+}
+```
+
+Then manually install:
+```bash
+cd ../myapp-feature
+pnpm install
+```
+
+## Worktrees Registry
+
+GWTree also maintains a separate registry of worktrees:
+
+**Location:** `~/.gwtree/worktrees.json`
+
+This file tracks all worktrees created by GWTree across all repositories. It's managed automatically and shouldn't need manual editing.
+
+**Structure:**
+```json
+{
+  "worktrees": [
+    {
+      "path": "/Users/john/projects/myapp-feature-auth",
+      "branch": "feature-auth",
+      "repoRoot": "/Users/john/projects/myapp",
+      "repoName": "myapp",
+      "createdAt": "2024-01-15T10:30:00.000Z"
+    }
+  ]
+}
+```
+
+## Resetting Configuration
+
+### Reset all settings
+
+```bash
+gwt config reset
+```
+
+Restores:
+- `editor`: `code`
+- `installDeps`: `true`
+- `lastPm`: `null`
+
+### Selective reset
+
+Edit config and remove specific keys. They'll use defaults on next run.
+
+## Environment Variables
+
+### EDITOR
+
+Used when `editor` is set to `default`:
+
+```bash
+export EDITOR=nvim
+gwt feature
+# Opens in nvim
+```
+
+If `$EDITOR` is not set, falls back to `vim`.
+
+## Common Configurations
+
+### For VS Code users (default)
+
+```json
+{
+  "editor": "code",
+  "installDeps": true,
+  "lastPm": "pnpm"
+}
+```
+
+### For Cursor users
+
+```json
+{
+  "editor": "cursor",
+  "installDeps": true,
+  "lastPm": "bun"
+}
+```
+
+### For terminal-only workflows
+
+```json
+{
+  "editor": "none",
+  "installDeps": false,
+  "lastPm": null
+}
+```
+
+### For scripts/CI
+
+```json
+{
+  "editor": "none",
+  "installDeps": false,
+  "lastPm": null
+}
+```
+
+Combine with `-y` flag:
+```bash
+gwt feature-name -y -x
+```
+
+## Troubleshooting
+
+### Config file not opening
+
+**Issue:** `gwt config` doesn't open editor
+
+**Solutions:**
+1. Check editor is installed:
+   ```bash
+   which code  # or cursor
+   ```
+
+2. Try different editor:
+   ```bash
+   gwt config
+   # Change "editor": "cursor" or "default"
+   ```
+
+3. Get path and open manually:
+   ```json
+   {"editor": "none"}
+   ```
+   ```bash
+   gwt config  # Prints path
+   code <path>
+   ```
+
+### Dependencies not installing
+
+**Issue:** Dependencies aren't installed automatically
+
+**Check config:**
+```bash
+gwt config
+# Ensure "installDeps": true
+```
+
+**Check package manager:**
+```bash
+which pnpm  # or npm/yarn/bun
+```
+
+### Wrong package manager
+
+**Issue:** Using npm but want pnpm
+
+**Solution:** Create appropriate lock file in main repo:
+```bash
+rm package-lock.json
+pnpm install
+# Creates pnpm-lock.yaml
+```
+
+Next worktree will use pnpm.
+
+## Exit Codes
+
+- `0` - Success (config opened or reset)
+- No error codes - Config command always succeeds
+
+## Related Commands
+
+- [gwt (create)](/commands/create) - Uses config settings when creating worktrees
+- [Flags](/commands/flags) - Override config with command-line flags

@@ -1,0 +1,326 @@
+---
+title: "Feature Development Workflow"
+description: "Complete workflow for developing features with git worktrees"
+icon: "code-branch"
+---
+
+Git worktrees revolutionize feature development by giving each feature its own isolated directory. Work on multiple features simultaneously without branch switching, stashing, or context loss.
+
+## The Problem with Traditional Workflow
+
+Traditional git workflow forces you to:
+- Switch branches constantly
+- Stash uncommitted changes
+- Lose IDE context and open files
+- Reinstall dependencies after switching
+- Close and reopen terminals
+
+**Worktrees solve all of this.**
+
+## Feature Development Flow
+
+<Steps>
+<Step title="Start a new feature">
+  Create a worktree for your feature:
+
+  ```bash
+  gwt feature-login
+  ```
+
+  This creates:
+  - A new branch: `feature-login`
+  - A new directory: `repo-feature-login/`
+  - Pulls latest from main automatically
+
+  Your editor opens automatically (VS Code or Cursor based on your config).
+</Step>
+
+<Step title="Develop in isolation">
+  Work normally in the worktree:
+
+  ```bash
+  cd repo-feature-login
+  npm install  # Dependencies specific to this worktree
+  npm run dev  # Run dev server
+  ```
+
+  Make changes, commit as you go:
+
+  ```bash
+  git add .
+  git commit -m "Add login form validation"
+  ```
+</Step>
+
+<Step title="Switch to another feature">
+  Need to work on something else? Just create another worktree:
+
+  ```bash
+  gwt hotfix-payment-bug -x
+  ```
+
+  The `-x` flag skips opening an editor. Your first feature stays untouched:
+  - All files exactly as you left them
+  - Dev server still running
+  - No stashing needed
+</Step>
+
+<Step title="Check status across features">
+  View progress on all your features:
+
+  ```bash
+  gwt status
+  ```
+
+  Output shows:
+  - Uncommitted changes in each worktree
+  - Commits ahead/behind main
+  - Merge status
+</Step>
+
+<Step title="Complete and merge">
+  When your feature is ready:
+
+  ```bash
+  # Push your branch
+  cd repo-feature-login
+  git push origin feature-login
+
+  # Create a PR (optional)
+  gh pr create --fill
+
+  # After PR is approved, merge and cleanup
+  gwt merge feature-login
+  ```
+
+  The `merge` command handles everything:
+  - Switches to main
+  - Merges the branch
+  - Removes the worktree
+  - Deletes the local branch
+</Step>
+</Steps>
+
+## Common Scenarios
+
+<CardGroup cols={2}>
+<Card title="Multiple Related Features" icon="diagram-project">
+  Work on related features in parallel:
+  
+  ```bash
+  gwt user-auth user-profile user-settings -x
+  ```
+  
+  Develop all three simultaneously, test interactions between them.
+</Card>
+
+<Card title="Feature + Hotfix" icon="fire">
+  Feature work interrupted by urgent bug:
+  
+  ```bash
+  # Already working in repo-feature-login
+  # Create hotfix without disrupting feature
+  gwt hotfix-critical -x
+  cd repo-hotfix-critical
+  # Fix bug, test, commit
+  git push origin hotfix-critical
+  gwt merge hotfix-critical
+  # Return to feature work
+  cd repo-feature-login
+  ```
+  
+  Your feature work remains untouched.
+</Card>
+
+<Card title="Long-Running Features" icon="clock">
+  Keep long-running feature branches fresh:
+  
+  ```bash
+  cd repo-big-feature
+  git fetch origin
+  git rebase origin/main
+  npm install  # Update dependencies
+  npm test     # Ensure tests still pass
+  ```
+</Card>
+
+<Card title="Experimental Work" icon="flask">
+  Try risky changes without fear:
+  
+  ```bash
+  gwt experiment-new-architecture -x
+  cd repo-experiment-new-architecture
+  # Make experimental changes
+  # If it works, keep it
+  # If not, just delete the worktree
+  gwt rm
+  ```
+</Card>
+</CardGroup>
+
+## Fast Creation Modes
+
+### Quick Mode
+
+Create worktree with a single name:
+
+```bash
+GWT feature-login  # Creates repo-feature-login with feature-login branch
+```
+
+### Fast Mode (Skip Prompts)
+
+Use `-y` to skip all prompts and use saved defaults:
+
+```bash
+gwt feature-dashboard -y
+```
+
+### Batch Mode
+
+Create multiple worktrees at once:
+
+```bash
+gwt auth api dashboard tests -x
+```
+
+### Ultra-Fast Mode
+
+Combine flags for instant creation:
+
+```bash
+GWT_EDITOR=none gwt auth api dashboard -y
+```
+
+## Configuration Tips
+
+Set your preferred editor globally:
+
+```bash
+gwt config
+```
+
+Options:
+- `code` - VS Code
+- `cursor` - Cursor
+- `none` - Don't open editor
+- `default` - System default
+
+Config stored in `~/.config/gwtree/config.json`:
+
+```json
+{
+  "editor": "cursor",
+  "installDeps": true,
+  "lastPm": "npm"
+}
+```
+
+## Cleaning Up
+
+<AccordionGroup>
+<Accordion title="Remove merged features">
+  Clean up features that have been merged to main:
+  
+  ```bash
+  gwt clean
+  ```
+  
+  Safely removes only merged worktrees.
+</Accordion>
+
+<Accordion title="Remove all worktrees">
+  Start fresh by removing all worktrees:
+  
+  ```bash
+  gwt clean --all
+  ```
+  
+  Use with caution - removes all worktrees including unmerged work.
+</Accordion>
+
+<Accordion title="Remove specific worktree">
+  Interactive search and remove:
+  
+  ```bash
+  gwt rm
+  ```
+  
+  Select the worktree to remove from a list.
+</Accordion>
+
+<Accordion title="List all worktrees">
+  See all your worktrees:
+  
+  ```bash
+  gwt ls
+  ```
+</Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<Note>
+**Keep main worktree clean** - Use the main repository directory for quick checks and worktree management only.
+</Note>
+
+<Tip>
+**Name worktrees descriptively** - Use clear names like `feature-user-auth` or `fix-payment-bug` so you know what each worktree contains.
+</Tip>
+
+<Warning>
+**Don't nest worktrees** - Create all worktrees as siblings to your main repository, not inside it.
+</Warning>
+
+## Troubleshooting
+
+<AccordionGroup>
+<Accordion title="Port already in use">
+  Each worktree can run its own dev server on a different port:
+  
+  ```bash
+  # Worktree 1
+  cd repo-feature-a
+  PORT=3000 npm run dev
+  
+  # Worktree 2  
+  cd repo-feature-b
+  PORT=3001 npm run dev
+  ```
+</Accordion>
+
+<Accordion title="Dependencies out of sync">
+  Each worktree has its own `node_modules`:
+  
+  ```bash
+  cd repo-feature-login
+  rm -rf node_modules
+  npm install
+  ```
+</Accordion>
+
+<Accordion title="Merge conflicts">
+  If you encounter conflicts when merging:
+  
+  ```bash
+  cd repo-feature-login
+  git fetch origin
+  git rebase origin/main
+  # Resolve conflicts
+  git add .
+  git rebase --continue
+  ```
+</Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+<Card title="Parallel Agents" icon="split" href="/use-cases/parallel-agents">
+  Run multiple AI agents simultaneously on different features.
+</Card>
+
+<Card title="Code Review" icon="magnifying-glass" href="/use-cases/code-review">
+  Review PRs without disrupting your current work.
+</Card>
+</CardGroup>

@@ -1,0 +1,271 @@
+---
+title: Batch Creation
+description: Create multiple git worktrees at once for parallel development
+---
+
+GWTree supports creating multiple worktrees in a single command, perfect for working on multiple features or tasks simultaneously.
+
+## Basic Usage
+
+Provide multiple names as arguments:
+
+```bash
+gwt feature-auth feature-api bug-fix
+```
+
+This creates three worktrees:
+- `myrepo-feature-auth` with branch `feature-auth`
+- `myrepo-feature-api` with branch `feature-api`
+- `myrepo-bug-fix` with branch `bug-fix`
+
+## Batch Creation Output
+
+When creating multiple worktrees, you'll see progress for each:
+
+```
+╔═╗╦ ╦╔╦╗
+║ ╦║║║ ║
+╚═╝╚╩╝ ╩
+
+┌  Create 3 Git Worktrees
+│
+│  ◆  Prune  git worktree prune
+│  └  removes stale refs
+│
+│  ◆  Create  git worktree add -b "feature-auth" .../myrepo-feature-auth
+│  └  /path/to/parent/myrepo-feature-auth
+│
+│  ◆  Install  pnpm install (myrepo-feature-auth)
+│  └  dependencies installed
+│
+│  ◆  Create  git worktree add -b "feature-api" .../myrepo-feature-api
+│  └  /path/to/parent/myrepo-feature-api
+│
+│  ◆  Install  pnpm install (myrepo-feature-api)
+│  └  dependencies installed
+│
+│  ◆  Create  git worktree add -b "bug-fix" .../myrepo-bug-fix
+│  └  /path/to/parent/myrepo-bug-fix
+│
+│  ◆  Install  pnpm install (myrepo-bug-fix)
+│  └  dependencies installed
+│
+└  Done  Created 3 worktrees
+
+   cd commands:
+   cd ../myrepo-feature-auth
+   cd ../myrepo-feature-api
+   cd ../myrepo-bug-fix
+```
+
+## Batch Workflow
+
+<Steps>
+
+### Step 1: Prune Once
+
+GWTree runs `git worktree prune` once at the beginning to clean up stale references.
+
+### Step 2: Create Each Worktree
+
+For each name provided:
+1. Checks if the directory already exists
+2. Handles branch name conflicts (appends `-1`, `-2`, etc.)
+3. Creates the worktree from main branch
+4. Records the worktree in global config
+
+### Step 3: Install Dependencies
+
+If `installDeps` is enabled in config, dependencies are installed for each worktree:
+- Detects package manager from lockfiles
+- Runs install command (pnpm install, npm install, etc.)
+- Continues on errors (doesn't block other worktrees)
+
+### Step 4: Open in Editor
+
+If an editor is configured, each worktree is opened:
+- VS Code: Opens all worktrees in separate windows
+- Cursor: Opens all worktrees in separate windows
+- Other editors: May open in single session
+
+### Step 5: Summary
+
+Shows a summary with cd commands for all created worktrees.
+
+</Steps>
+
+## Handling Conflicts
+
+### Existing Directory
+
+If a worktree directory already exists, it's skipped:
+
+```
+│
+│  ◆  Skip  myrepo-feature-auth
+│  └  already exists
+```
+
+### Branch Name Conflicts
+
+If a branch name is taken, GWTree appends a counter:
+
+```bash
+gwt feature feature feature
+# Creates branches:
+# - feature
+# - feature-1
+# - feature-2
+```
+
+### Creation Failures
+
+If a worktree fails to create, the batch continues:
+
+```
+│
+│  ◆  Failed  myrepo-bad-name
+│  └  invalid reference format
+│
+│  ◆  Create  git worktree add -b "good-name" .../myrepo-good-name
+│  └  /path/to/parent/myrepo-good-name
+```
+
+## Silent Mode for Batch
+
+Batch creation automatically uses saved configuration:
+- No interactive prompts for uncommitted changes
+- No prompts for branch switching
+- No prompts for pulling from remote
+- Uses saved editor and dependency preferences
+
+This makes batch operations fast and non-blocking.
+
+## Combine with Skip Editor
+
+Prevent opening editors for all worktrees:
+
+```bash
+gwt task-1 task-2 task-3 -x
+```
+
+Useful when:
+- You want to set up worktrees first, then open them manually
+- You're scripting worktree creation
+- You're working remotely via SSH
+
+## Use Cases
+
+### Sprint Planning
+
+Create worktrees for all sprint tasks:
+
+```bash
+gwt ticket-123 ticket-124 ticket-125 ticket-126
+```
+
+### Feature Branches
+
+Set up parallel feature development:
+
+```bash
+gwt feature/auth feature/api feature/ui
+```
+
+### Bug Triage
+
+Quickly create worktrees for multiple bug fixes:
+
+```bash
+gwt bug/memory-leak bug/crash bug/ui-glitch
+```
+
+### Experimentation
+
+Create multiple experimental branches:
+
+```bash
+gwt exp/approach-a exp/approach-b exp/approach-c
+```
+
+## Performance Considerations
+
+### Dependency Installation
+
+Installing dependencies for multiple worktrees can take time:
+
+```bash
+# With dependency installation (slower)
+gwt task-1 task-2 task-3
+
+# Disable in config for faster creation
+# Then install manually later
+```
+
+See [configuration guide](/guides/configuration) to disable automatic dependency installation.
+
+### Editor Windows
+
+Opening many editor windows can be resource-intensive:
+
+```bash
+# Skip editor opening for batch
+gwt task-1 task-2 task-3 -x
+
+# Then open selectively
+code ../myrepo-task-1
+```
+
+## Comparison with Single Creation
+
+| Feature | Single Creation | Batch Creation |
+|---------|----------------|----------------|
+| Interactive prompts | Yes (unless -y) | No |
+| Uncommitted changes | Prompts to stash | No action |
+| Branch switching | Prompts to switch | No action |
+| Pull from remote | Prompts to pull | No action |
+| Dependency install | Based on config | Based on config |
+| Editor opening | Based on config | Based on config |
+| Error handling | Stops on error | Continues on error |
+| Summary | Shows cd command | Shows all cd commands |
+
+## Examples
+
+### Create Three Features
+
+```bash
+gwt feature-a feature-b feature-c
+```
+
+Output:
+```
+└  Done  Created 3 worktrees
+
+   cd commands:
+   cd ../myrepo-feature-a
+   cd ../myrepo-feature-b
+   cd ../myrepo-feature-c
+```
+
+### Create Without Editor
+
+```bash
+gwt refactor-a refactor-b refactor-c -x
+```
+
+### Ticket-Based Workflow
+
+```bash
+gwt JIRA-101 JIRA-102 JIRA-103
+```
+
+Creates worktrees named:
+- `myrepo-JIRA-101`
+- `myrepo-JIRA-102`
+- `myrepo-JIRA-103`
+
+## Next Steps
+
+- Learn about [managing worktrees](/guides/managing-worktrees) to track and remove worktrees
+- Check [merging and cleanup](/guides/merging-and-cleanup) for completing work
+- Optimize your workflow with [configuration](/guides/configuration)
