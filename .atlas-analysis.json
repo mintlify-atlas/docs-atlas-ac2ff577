@@ -1,0 +1,112 @@
+{
+  "projectType": "cli-tool",
+  "projectName": "GWTree",
+  "projectDescription": "Git worktree manager for parallel development with multiple AI coding agents",
+  "theme": "aspen",
+  "primaryColor": "#000000",
+  "lightColor": "#333333",
+  "darkColor": "#000000",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/worktrees",
+              "concepts/multi-agent-workflow",
+              "concepts/naming-patterns"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/creating-worktrees",
+              "guides/batch-creation",
+              "guides/managing-worktrees",
+              "guides/merging-and-cleanup",
+              "guides/configuration"
+            ]
+          },
+          {
+            "group": "Use Cases",
+            "pages": [
+              "use-cases/parallel-agents",
+              "use-cases/feature-development",
+              "use-cases/code-review"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Command Reference",
+        "groups": [
+          {
+            "group": "Commands",
+            "pages": [
+              "commands/overview",
+              "commands/create",
+              "commands/list",
+              "commands/remove",
+              "commands/status",
+              "commands/clean",
+              "commands/merge",
+              "commands/config"
+            ]
+          },
+          {
+            "group": "Options & Flags",
+            "pages": [
+              "commands/flags"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Resources",
+        "groups": [
+          {
+            "group": "Additional Resources",
+            "pages": [
+              "troubleshooting",
+              "faq",
+              "changelog"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Batch worktree creation for parallel development",
+    "Multi-agent workflow support (Claude Code, Command Code, Cursor)",
+    "Status dashboard with git metrics",
+    "Smart cleanup of merged worktrees",
+    "One-command merge and cleanup",
+    "Interactive management with search",
+    "Configurable defaults and editor integration",
+    "Auto dependency installation"
+  ],
+  "publicApiSurface": [
+    "gwt [names...] - Create worktrees",
+    "gwt -y, --yes - Fast mode with defaults",
+    "gwt -x, --no-editor - Skip editor",
+    "gwt ls, list - List worktrees",
+    "gwt rm, remove - Remove worktrees",
+    "gwt status, st - Show worktree status",
+    "gwt clean - Remove merged worktrees",
+    "gwt clean -a, --all - Remove all worktrees",
+    "gwt merge <name> - Merge and cleanup",
+    "gwt config - Manage configuration",
+    "gwt config reset - Reset to defaults"
+  ]
+}
